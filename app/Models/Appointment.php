@@ -33,6 +33,11 @@ class Appointment extends Model
         return Attribute::get(fn () => $this->appointment_date?->copy()->setTimezone(config('clinic.timezone')));
     }
 
+    protected function localRequestedAt(): Attribute
+    {
+        return Attribute::get(fn () => $this->created_at?->copy()->setTimezone(config('clinic.timezone')));
+    }
+
     public function patient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'patient_id');

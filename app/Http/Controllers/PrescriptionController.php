@@ -27,9 +27,17 @@ class PrescriptionController extends Controller
     public function create(Request $request): View
     {
         $user = $this->authenticatedUser($request);
+        $validated = $request->validate([
+            'appointment_id' => ['nullable', 'integer', 'min:1'],
+        ]);
+        $prescription = new Prescription;
+
+        if ($validated['appointment_id'] ?? null) {
+            $prescription->appointment_id = $this->accessibleAppointments($user)->findOrFail($validated['appointment_id'])->id;
+        }
 
         return view('prescriptions.create', [
-            'prescription' => new Prescription,
+            'prescription' => $prescription,
             'appointments' => $this->accessibleAppointments($user)->latest('appointment_date')->get(),
         ]);
     }

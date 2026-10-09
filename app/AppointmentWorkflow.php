@@ -54,19 +54,43 @@ class AppointmentWorkflow
         });
     }
 
-    public function confirm(User $user, Appointment $appointment): Appointment
+    public function confirm(User $user, Appointment $appointment, ?string $appointmentDate = null): Appointment
     {
-        return $this->synchronized(function () use ($user, $appointment): Appointment {
+        return $this->synchronized(function () use ($user, $appointment, $appointmentDate): Appointment {
             $appointment = Appointment::query()->findOrFail($appointment->id);
             abort_unless($user->role === 'admin' || ($user->role === 'doctor' && Doctor::whereKey($appointment->doctor_id)->where('user_id', $user->id)->exists()), 403);
             abort_unless($appointment->status === 'pending', 409);
 
-            $date = CarbonImmutable::instance($appointment->appointment_date);
+            $date = $appointmentDate === null
+                ? CarbonImmutable::instance($appointment->appointment_date)
+                : CarbonImmutable::parse($appointmentDate, config('clinic.timezone'))->utc();
             $this->ensureFutureDate($date);
             $this->ensureAvailable($appointment->doctor_id, $appointment->patient_id, $date, $appointment->id);
-            $appointment->update(['status' => 'confirmed']);
+            $appointment->update([
+                'status' => 'confirmed',
+                ...($appointmentDate === null ? [] : ['appointment_date' => $date]),
+            ]);
 
             return $appointment->load('patient');
+        });
+    }
+
+    public function complete(User $user, Appointment $appointment): Appointment
+    {
+        return $this->synchronized(function () use ($user, $appointment): Appointment {
+            $appointment = Appointment::query()->findOrFail($appointment->id);
+            abort_unless($user->role === 'admin' || ($user->role === 'doctor' && Doctor::whereKey($appointment->doctor_id)->where('user_id', $user->id)->exists()), 403);
+            abort_unless($appointment->status === 'confirmed', 409);
+
+            if ($appointment->appointment_date->isFuture()) {
+                throw ValidationException::withMessages([
+                    'appointment_date' => 'A visit cannot be completed before its scheduled start time.',
+                ]);
+            }
+
+            $appointment->update(['status' => 'completed']);
+
+            return $appointment;
         });
     }
 
@@ -85,6 +109,12 @@ class AppointmentWorkflow
     public function deleteAccount(User $user): void
     {
         $this->synchronized(function () use ($user): void {
+            if ($user->role === 'admin' && ! User::where('role', 'admin')->where('id', '!=', $user->id)->exists()) {
+                throw ValidationException::withMessages([
+                    'account' => 'The last administrator account cannot be deleted. Another administrator must be in place first.',
+                ])->errorBag('userDeletion');
+            }
+
             if ($user->appointments()->exists() || $user->doctor()->whereHas('appointments')->exists()) {
                 throw ValidationException::withMessages([
                     'account' => 'Your account has clinic records and cannot be deleted. Please contact the clinic administrator.',

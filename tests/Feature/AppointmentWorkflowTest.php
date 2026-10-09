@@ -179,6 +179,94 @@ it('preserves clinic history and authentication when a patient or doctor deletes
     $this->assertModelExists($prescription);
 })->with(['patient', 'doctor']);
 
+it('keeps the last administrator account and their authenticated session', function () {
+    $admin = User::factory()->admin()->create();
+    User::factory()->doctor()->create();
+
+    $this->actingAs($admin)->from(route('profile.edit'))->delete(route('profile.destroy'), ['password' => 'password'])
+        ->assertRedirect(route('profile.edit'))
+        ->assertSessionHasErrorsIn('userDeletion', [
+            'account' => 'The last administrator account cannot be deleted. Another administrator must be in place first.',
+        ]);
+
+    $this->assertModelExists($admin);
+    $this->assertAuthenticatedAs($admin);
+});
+
+it('allows an administrator without clinic records to delete their account when another administrator remains', function () {
+    $admin = User::factory()->admin()->create();
+    $remainingAdmin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->delete(route('profile.destroy'), ['password' => 'password'])
+        ->assertSessionHasNoErrors()->assertRedirect('/');
+
+    $this->assertModelMissing($admin);
+    $this->assertModelExists($remainingAdmin);
+    $this->assertGuest();
+});
+
+it('completes a confirmed visit at its start time without removing its records', function (string $role) {
+    $this->freezeTime();
+    $appointment = Appointment::factory()->create(['status' => 'confirmed', 'appointment_date' => now()]);
+    $prescription = Prescription::factory()->for($appointment, 'appointment')->create();
+    $user = $role === 'doctor' ? $appointment->doctor->user : User::factory()->admin()->create();
+
+    $this->actingAs($user)->post(route('appointments.complete', $appointment))
+        ->assertRedirect(route('appointments.show', $appointment))
+        ->assertSessionHas('success', 'Visit marked as completed.');
+
+    $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'status' => 'completed']);
+    $this->assertModelExists($prescription);
+})->with(['doctor', 'admin']);
+
+it('refuses to complete a confirmed visit before its start time', function () {
+    $this->freezeTime();
+    $appointment = Appointment::factory()->create(['status' => 'confirmed', 'appointment_date' => now()->addSecond()]);
+
+    $this->actingAs($appointment->doctor->user)->postJson(route('appointments.complete', $appointment))
+        ->assertUnprocessable()->assertJsonValidationErrors([
+            'appointment_date' => 'A visit cannot be completed before its scheduled start time.',
+        ]);
+
+    $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'status' => 'confirmed']);
+});
+
+it('rejects completion when the visit is not confirmed', function (string $status) {
+    $this->freezeTime();
+    $appointment = Appointment::factory()->create(['status' => $status, 'appointment_date' => now()->subHour()]);
+
+    $this->actingAs($appointment->doctor->user)->post(route('appointments.complete', $appointment))->assertConflict();
+
+    $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'status' => $status]);
+})->with(['pending', 'cancelled', 'completed']);
+
+it('prevents an unrelated doctor from completing a visit', function () {
+    $this->freezeTime();
+    $doctor = Doctor::factory()->create();
+    $appointment = Appointment::factory()->create(['status' => 'confirmed', 'appointment_date' => now()->subHour()]);
+
+    $this->actingAs($doctor->user)->post(route('appointments.complete', $appointment))->assertForbidden();
+
+    $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'status' => 'confirmed']);
+});
+
+it('prevents patients from completing their own visits', function () {
+    $this->freezeTime();
+    $appointment = Appointment::factory()->create(['status' => 'confirmed', 'appointment_date' => now()->subHour()]);
+
+    $this->actingAs($appointment->patient)->post(route('appointments.complete', $appointment))->assertForbidden();
+
+    $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'status' => 'confirmed']);
+});
+
+it('requires authentication to complete a visit', function () {
+    $appointment = Appointment::factory()->create(['status' => 'confirmed']);
+
+    $this->post(route('appointments.complete', $appointment))->assertRedirect(route('login'));
+
+    $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'status' => 'confirmed']);
+});
+
 it('confirms the appointment and reports a delivery failure without an error page', function () {
     Exceptions::fake();
     $appointment = Appointment::factory()->create();

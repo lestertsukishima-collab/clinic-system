@@ -1,13 +1,16 @@
+@php($isPatient = auth()->user()->role === 'patient')
 <x-app-layout>
     <x-slot name="header">
         <div class="clinic-record-heading">
             <div>
-                <p class="clinic-eyebrow mb-1">CLINIC MANAGEMENT</p>
-                <h1 class="clinic-page-title">Prescriptions</h1>
+                <p class="clinic-eyebrow mb-1">{{ $isPatient ? 'PATIENT WORKSPACE' : 'CLINIC MANAGEMENT' }}</p>
+                <h1 class="clinic-page-title">{{ $isPatient ? 'My prescriptions' : 'Prescriptions' }}</h1>
             </div>
-            <a href="{{ route('prescriptions.create') }}" class="clinic-primary-button">
-                <i class="bi bi-plus-lg" aria-hidden="true"></i> Create prescription
-            </a>
+            @unless($isPatient)
+                <a href="{{ route('prescriptions.create') }}" class="clinic-primary-button">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i> Create prescription
+                </a>
+            @endunless
         </div>
     </x-slot>
 
@@ -24,7 +27,7 @@
                     <div>
                         <p class="clinic-eyebrow mb-1">TREATMENT RECORDS</p>
                         <h2 id="prescriptions-title">Prescription list</h2>
-                        <p class="clinic-card-description">Review prescriptions associated with clinic appointments.</p>
+                        <p class="clinic-card-description">{{ $isPatient ? 'Read and print prescriptions from your completed visits. Contact your doctor if you have questions about your prescription.' : 'Review prescriptions associated with clinic appointments.' }}</p>
                     </div>
                     <span class="clinic-count-pill">
                         <i class="bi bi-prescription2" aria-hidden="true"></i>
@@ -62,7 +65,7 @@
                                     <td><span class="clinic-diagnosis-preview">{{ \Illuminate\Support\Str::limit($prescription->diagnosis, 68) }}</span></td>
                                     <td>
                                         <div class="clinic-row-actions">
-                                            <a href="{{ route('prescriptions.show', $prescription) }}" class="clinic-action-button clinic-action-view">
+                                            <a href="{{ route($isPatient ? 'patient-prescriptions.show' : 'prescriptions.show', $prescription) }}" class="clinic-action-button clinic-action-view">
                                                 <i class="bi bi-eye" aria-hidden="true"></i> View
                                             </a>
                                         </div>
@@ -74,10 +77,12 @@
                                         <div class="clinic-empty-state">
                                             <span class="clinic-empty-icon" aria-hidden="true"><i class="bi bi-prescription2"></i></span>
                                             <h3>No prescriptions recorded</h3>
-                                            <p>Prescriptions linked to appointments will appear here.</p>
-                                            <a href="{{ route('prescriptions.create') }}" class="clinic-primary-button clinic-empty-action">
-                                                <i class="bi bi-plus-lg" aria-hidden="true"></i> Create a prescription
-                                            </a>
+                                            <p>{{ $isPatient ? 'Prescriptions will appear here after your doctor completes the visit and records a prescription.' : 'Prescriptions linked to appointments will appear here.' }}</p>
+                                            @unless($isPatient)
+                                                <a href="{{ route('prescriptions.create') }}" class="clinic-primary-button clinic-empty-action">
+                                                    <i class="bi bi-plus-lg" aria-hidden="true"></i> Create a prescription
+                                                </a>
+                                            @endunless
                                         </div>
                                     </td>
                                 </tr>

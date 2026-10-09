@@ -4,6 +4,10 @@
         @method($method)
     @endif
 
+    @if(auth()->user()->role === 'patient')
+        <p class="clinic-card-description">{{ $editing ? 'You can update this request while it is pending. The clinic will confirm your appointment.' : 'This submits a request. Your appointment is confirmed only after the clinic approves it.' }}</p>
+    @endif
+
     @if(auth()->user()->role === 'admin')
         <div>
             <label for="patient_id" class="block text-sm font-medium text-gray-700">Patient</label>

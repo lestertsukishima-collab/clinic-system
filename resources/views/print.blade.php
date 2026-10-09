@@ -160,9 +160,7 @@
         <!-- Header / Clinic Details -->
         <div class="header">
             <div class="clinic-info">
-                <h2>HEALTHCARE CLINIC</h2>
-                <p>123 Medical Center Way, Suite 400</p>
-                <p>Contact: (02) 8888-1234 | info@healthcareclinic.com</p>
+                <h2>Happy Clinic</h2>
             </div>
             <div style="text-align: right;">
                 <p style="margin: 0; font-size: 12px; color: #666;">Rx No:</p>
@@ -177,7 +175,7 @@
                 <strong>Email:</strong> {{ $prescription->appointment->patient->email }}
             </div>
             <div>
-                <strong>Date:</strong> {{ $prescription->created_at->format('F d, Y') }}<br>
+                <strong>Date:</strong> {{ $prescription->created_at->timezone(config('clinic.timezone'))->format('F d, Y') }}<br>
                 <strong>Doctor:</strong> {{ $prescription->appointment->doctor->display_name ?? 'N/A' }}
             </div>
         </div>
@@ -215,7 +213,6 @@
             </div>
             <div class="signature-line">
                 <strong>{{ $prescription->appointment->doctor->display_name ?? 'N/A' }}</strong><br>
-                <span style="font-size: 12px; color: #666;">License No: {{ $prescription->appointment->doctor->license_number ?? 'XXXXX' }}</span>
             </div>
         </div>
     </div>

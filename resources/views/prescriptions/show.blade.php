@@ -1,3 +1,4 @@
+@php($isPatient = auth()->user()->role === 'patient')
 <x-app-layout>
     <x-slot name="header">
         <div class="clinic-record-heading">
@@ -5,7 +6,7 @@
                 <p class="clinic-eyebrow mb-1">TREATMENT RECORD</p>
                 <h1 class="clinic-page-title">Prescription #{{ $prescription->id }}</h1>
             </div>
-            <a href="{{ route('prescriptions.index') }}" class="clinic-back-link">
+            <a href="{{ route($isPatient ? 'patient-prescriptions.index' : 'prescriptions.index') }}" class="clinic-back-link">
                 <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to prescriptions
             </a>
         </div>
@@ -46,6 +47,11 @@
                 </div>
 
                 <section class="clinic-prescription-section">
+                    <span class="clinic-detail-label"><i class="bi bi-calendar-plus" aria-hidden="true"></i> Appointment requested on</span>
+                    <p>{{ $prescription->appointment->local_requested_at->format('M d, Y') }} at {{ $prescription->appointment->local_requested_at->format('g:i:s A') }} &middot; {{ config('clinic.timezone') }}</p>
+                </section>
+
+                <section class="clinic-prescription-section">
                     <span class="clinic-detail-label"><i class="bi bi-clipboard2-pulse" aria-hidden="true"></i> Diagnosis</span>
                     <p>{{ $prescription->diagnosis }}</p>
                 </section>
@@ -61,19 +67,21 @@
                 </section>
 
                 <div class="clinic-detail-actions clinic-prescription-actions">
-                    <a href="{{ route('prescriptions.print', $prescription) }}" class="clinic-action-button">
+                    <a href="{{ route($isPatient ? 'patient-prescriptions.print' : 'prescriptions.print', $prescription) }}" class="clinic-action-button">
                         <i class="bi bi-printer" aria-hidden="true"></i> Print
                     </a>
-                    <a href="{{ route('prescriptions.edit', $prescription) }}" class="clinic-primary-button">
-                        <i class="bi bi-pencil" aria-hidden="true"></i> Edit prescription
-                    </a>
-                    <form method="POST" action="{{ route('prescriptions.destroy', $prescription) }}" onsubmit="return confirm('Delete this prescription?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="clinic-action-button clinic-action-cancel">
-                            <i class="bi bi-trash3" aria-hidden="true"></i> Delete
-                        </button>
-                    </form>
+                    @unless($isPatient)
+                        <a href="{{ route('prescriptions.edit', $prescription) }}" class="clinic-primary-button">
+                            <i class="bi bi-pencil" aria-hidden="true"></i> Edit prescription
+                        </a>
+                        <form method="POST" action="{{ route('prescriptions.destroy', $prescription) }}" onsubmit="return confirm('Delete this prescription?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="clinic-action-button clinic-action-cancel">
+                                <i class="bi bi-trash3" aria-hidden="true"></i> Delete
+                            </button>
+                        </form>
+                    @endunless
                 </div>
             </article>
         </div>

@@ -2,7 +2,7 @@
     <div class="clinic-sidebar-header">
         <a href="{{ route('dashboard') }}" class="clinic-app-brand">
             <span class="clinic-app-brand-mark" aria-hidden="true"><i class="bi bi-hospital"></i></span>
-            <span class="clinic-app-brand-copy"><strong>Happy Clinic</strong><small>Care management</small></span>
+            <span class="clinic-app-brand-copy"><strong>Happy Clinic</strong><small>{{ match (Auth::user()->role) { 'admin' => 'Administration', 'doctor' => 'Doctor workspace', 'patient' => 'Patient workspace', default => 'Care management' } }}</small></span>
         </a>
         <button x-ref="sidebarClose" type="button" class="clinic-sidebar-close" @click="closeSidebar()" aria-label="Close navigation menu">
             <i class="bi bi-x-lg" aria-hidden="true"></i>
@@ -13,12 +13,18 @@
         <p class="clinic-sidebar-label">{{ __('Workspace') }}</p>
         <x-responsive-nav-link class="clinic-sidebar-link" :href="route('dashboard')" :active="request()->routeIs('dashboard')" :aria-current="request()->routeIs('dashboard') ? 'page' : null">
             <i class="bi bi-grid-1x2" aria-hidden="true"></i>
-            {{ __('Dashboard') }}
+            {{ match (Auth::user()->role) { 'doctor' => __('My workspace'), 'patient' => __('My care'), default => __('Dashboard') } }}
         </x-responsive-nav-link>
         <x-responsive-nav-link class="clinic-sidebar-link" :href="route('appointments.index')" :active="request()->routeIs('appointments.*')" :aria-current="request()->routeIs('appointments.*') ? 'page' : null">
             <i class="bi bi-calendar2-week" aria-hidden="true"></i>
-            {{ __('Appointments') }}
+            {{ Auth::user()->role === 'admin' ? __('Appointments') : __('My appointments') }}
         </x-responsive-nav-link>
+        @if(Auth::user()->role === 'patient')
+            <x-responsive-nav-link class="clinic-sidebar-link" :href="route('patient-prescriptions.index')" :active="request()->routeIs('patient-prescriptions.*')" :aria-current="request()->routeIs('patient-prescriptions.*') ? 'page' : null">
+                <i class="bi bi-prescription2" aria-hidden="true"></i>
+                {{ __('My prescriptions') }}
+            </x-responsive-nav-link>
+        @endif
         @if(in_array(Auth::user()->role, ['doctor', 'admin'], true))
             <x-responsive-nav-link class="clinic-sidebar-link" :href="route('prescriptions.index')" :active="request()->routeIs('prescriptions.*')" :aria-current="request()->routeIs('prescriptions.*') ? 'page' : null">
                 <i class="bi bi-prescription2" aria-hidden="true"></i>
@@ -26,6 +32,11 @@
             </x-responsive-nav-link>
         @endif
         @if(Auth::user()->role === 'admin')
+            <p class="clinic-sidebar-label">{{ __('Administration') }}</p>
+            <x-responsive-nav-link class="clinic-sidebar-link" :href="route('patients.index')" :active="request()->routeIs('patients.*')" :aria-current="request()->routeIs('patients.*') ? 'page' : null">
+                <i class="bi bi-people" aria-hidden="true"></i>
+                {{ __('Patients') }}
+            </x-responsive-nav-link>
             <x-responsive-nav-link class="clinic-sidebar-link" :href="route('doctors.index')" :active="request()->routeIs('doctors.*')" :aria-current="request()->routeIs('doctors.*') ? 'page' : null">
                 <i class="bi bi-person-badge" aria-hidden="true"></i>
                 {{ __('Doctors') }}
@@ -46,7 +57,7 @@
             @endif
             <div class="clinic-sidebar-user-copy">
                 <strong>{{ Auth::user()->doctor?->display_name ?? Auth::user()->name }}</strong>
-                <small>{{ ucfirst(Auth::user()->role) }}</small>
+                <small>{{ Auth::user()->role === 'admin' ? 'Administrator' : ucfirst(Auth::user()->role) }}</small>
             </div>
         </div>
         <x-responsive-nav-link class="clinic-sidebar-link" :href="route('profile.edit')" :active="request()->routeIs('profile.*')" :aria-current="request()->routeIs('profile.*') ? 'page' : null">

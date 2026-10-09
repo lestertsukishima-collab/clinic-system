@@ -3,6 +3,8 @@
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\PatientController;
+use App\Http\Controllers\PatientPrescriptionController;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServiceController;
@@ -30,14 +32,24 @@ Route::middleware(['auth', 'role:patient,admin'])->group(function (): void {
     Route::get('/book-appointment', fn () => redirect()->route('appointments.create'));
 });
 
+Route::middleware(['auth', 'role:patient'])->group(function (): void {
+    Route::resource('patient-prescriptions', PatientPrescriptionController::class)
+        ->only(['index', 'show'])->parameters(['patient-prescriptions' => 'prescription']);
+    Route::get('/patient-prescriptions/{prescription}/print', [PatientPrescriptionController::class, 'print'])
+        ->name('patient-prescriptions.print');
+});
+
 Route::middleware(['auth', 'role:doctor,admin'])->group(function (): void {
     Route::resource('prescriptions', PrescriptionController::class);
     Route::get('/prescriptions/{prescription}/print', [PrescriptionController::class, 'print'])->name('prescriptions.print');
     Route::post('/appointments/{appointment}/confirm', [AppointmentController::class, 'confirmAppointment'])
         ->name('appointments.confirm');
+    Route::post('/appointments/{appointment}/complete', [AppointmentController::class, 'completeAppointment'])
+        ->name('appointments.complete');
 });
 
 Route::middleware(['auth', 'role:admin'])->group(function (): void {
+    Route::resource('patients', PatientController::class)->only(['index']);
     Route::resource('doctors', DoctorController::class);
     Route::resource('services', ServiceController::class);
 });

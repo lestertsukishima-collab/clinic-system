@@ -104,3 +104,26 @@ it('forbids patients from accessing prescription management', function () {
         ->get(route('prescriptions.index'))
         ->assertForbidden();
 });
+
+it('preselects the accessible appointment when prescribing from a visit', function () {
+    $appointment = Appointment::factory()->create(['status' => 'confirmed']);
+
+    $this->actingAs($appointment->doctor->user)
+        ->get(route('prescriptions.create', ['appointment_id' => $appointment->id]))
+        ->assertViewHas('prescription', fn ($prescription) => $prescription->appointment_id === $appointment->id)
+        ->assertSee('value="'.$appointment->id.'" selected', false);
+});
+
+it('does not preselect another doctors appointment', function () {
+    $doctor = Doctor::factory()->create();
+    $appointment = Appointment::factory()->create();
+
+    $this->actingAs($doctor->user)->get(route('prescriptions.create', ['appointment_id' => $appointment->id]))
+        ->assertNotFound();
+});
+
+it('validates appointment selection before rendering the prescription form', function (mixed $appointmentId) {
+    $this->actingAs(User::factory()->doctor()->create())
+        ->getJson(route('prescriptions.create', ['appointment_id' => $appointmentId]))
+        ->assertUnprocessable()->assertJsonValidationErrors('appointment_id');
+})->with(['not an id' => ['invalid'], 'negative id' => [-1]]);

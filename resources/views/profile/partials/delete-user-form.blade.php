@@ -7,6 +7,9 @@
         <p class="mt-1 text-sm text-gray-600">
             {{ __('Accounts with appointment or prescription history cannot be deleted. Please contact the clinic administrator if you need help with your account.') }}
         </p>
+        @if($user->role === 'admin')
+            <p class="mt-1 text-sm text-gray-600">{{ __('The last administrator account cannot be deleted. Another administrator must be in place first.') }}</p>
+        @endif
     </header>
 
     <x-danger-button

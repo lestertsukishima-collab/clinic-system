@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
@@ -20,12 +21,38 @@ class AppointmentController extends Controller
 {
     public function index(Request $request): View
     {
-        $appointments = $this->accessibleAppointments($this->authenticatedUser($request))
-            ->latest('appointment_date')
-            ->orderByDesc('id')
-            ->paginate(10);
+        $user = $this->authenticatedUser($request);
+        $filters = $request->validate([
+            'status' => ['nullable', 'in:pending,confirmed,completed,cancelled'],
+            'date' => ['nullable', 'date_format:Y-m-d'],
+            'patient_id' => ['nullable', 'integer', 'min:1'],
+        ]);
+        $query = $this->accessibleAppointments($user);
 
-        return view('appointments.index', compact('appointments'));
+        if ($filters['status'] ?? null) {
+            $query->where('status', $filters['status']);
+        }
+
+        if ($filters['date'] ?? null) {
+            $dayStart = Carbon::parse($filters['date'], config('clinic.timezone'))->startOfDay();
+            $query->where('appointment_date', '>=', $dayStart->copy()->utc())
+                ->where('appointment_date', '<', $dayStart->copy()->addDay()->utc());
+        }
+
+        $selectedPatient = null;
+
+        if ($user->role === 'admin' && ($filters['patient_id'] ?? null)) {
+            $selectedPatient = User::where('role', 'patient')->findOrFail($filters['patient_id']);
+            $query->where('patient_id', $selectedPatient->id);
+        }
+
+        $appointments = $query
+            ->orderBy('appointment_date', ($filters['date'] ?? null) ? 'asc' : 'desc')
+            ->orderByDesc('id')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('appointments.index', compact('appointments', 'filters', 'selectedPatient'));
     }
 
     public function create(Request $request): View
@@ -53,7 +80,12 @@ class AppointmentController extends Controller
 
     public function show(Request $request, Appointment $appointment): View
     {
-        $appointment = $this->findAccessibleAppointment($this->authenticatedUser($request), $appointment->id);
+        $user = $this->authenticatedUser($request);
+        $appointment = $this->findAccessibleAppointment($user, $appointment->id);
+
+        if (in_array($user->role, ['admin', 'doctor'], true) || $appointment->status === 'completed') {
+            $appointment->load('prescriptions');
+        }
 
         return view('appointments.show', [
             'appointment' => $appointment,
@@ -99,7 +131,10 @@ class AppointmentController extends Controller
     public function confirmAppointment(Request $request, Appointment $appointment, AppointmentWorkflow $workflow): RedirectResponse
     {
         $user = $this->authenticatedUser($request);
-        $appointment = $workflow->confirm($user, $appointment);
+        $validated = $request->validate([
+            'appointment_date' => ['sometimes', 'required', 'string', 'date_format:Y-m-d\TH:i'],
+        ]);
+        $appointment = $workflow->confirm($user, $appointment, $validated['appointment_date'] ?? null);
 
         try {
             Mail::to($appointment->patient->email)->send(new AppointmentConfirmed($appointment));
@@ -116,6 +151,13 @@ class AppointmentController extends Controller
             'type' => 'success',
             'message' => 'Appointment confirmed and email sent.',
         ]);
+    }
+
+    public function completeAppointment(Request $request, Appointment $appointment, AppointmentWorkflow $workflow): RedirectResponse
+    {
+        $appointment = $workflow->complete($this->authenticatedUser($request), $appointment);
+
+        return redirect()->route('appointments.show', $appointment)->with('success', 'Visit marked as completed.');
     }
 
     private function authenticatedUser(Request $request): User
