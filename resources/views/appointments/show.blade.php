@@ -26,7 +26,7 @@
                     <div class="clinic-detail-heading-copy">
                         <p class="clinic-eyebrow mb-1">VISIT SUMMARY</p>
                         <h2>{{ $appointment->service->name }}</h2>
-                        <p>{{ $appointment->appointment_date->format('l, F j, Y') }} at {{ $appointment->appointment_date->format('g:i A') }}</p>
+                        <p>{{ $appointment->local_appointment_date->format('l, F j, Y') }} at {{ $appointment->local_appointment_date->format('g:i A') }}</p>
                     </div>
                     <span class="clinic-status clinic-status-{{ strtolower($appointment->status) }}">
                         <span class="clinic-status-dot" aria-hidden="true"></span>
@@ -52,8 +52,8 @@
                     </div>
                     <div class="clinic-detail-item">
                         <span class="clinic-detail-label"><i class="bi bi-clock" aria-hidden="true"></i> Appointment time</span>
-                        <strong>{{ $appointment->appointment_date->format('M d, Y') }}</strong>
-                        <small>{{ $appointment->appointment_date->format('g:i A') }}</small>
+                        <strong>{{ $appointment->local_appointment_date->format('M d, Y') }}</strong>
+                        <small>{{ $appointment->local_appointment_date->format('g:i A') }}</small>
                     </div>
                 </div>
 
@@ -62,9 +62,9 @@
                     <p>{{ $appointment->notes ?: 'No additional notes were provided.' }}</p>
                 </div>
 
-                @if(auth()->user()->role === 'admin' || (auth()->user()->role === 'patient' && $appointment->status === 'pending') || (auth()->user()->role === 'doctor' && $appointment->status === 'pending'))
+                @if((auth()->user()->role === 'admin' && in_array($appointment->status, ['pending', 'confirmed'], true)) || (in_array(auth()->user()->role, ['patient', 'doctor'], true) && $appointment->status === 'pending'))
                     <div class="clinic-detail-actions">
-                        @if(auth()->user()->role === 'admin' || (auth()->user()->role === 'patient' && $appointment->status === 'pending'))
+                        @if((auth()->user()->role === 'admin' && in_array($appointment->status, ['pending', 'confirmed'], true)) || (auth()->user()->role === 'patient' && $appointment->status === 'pending'))
                             <a href="{{ route('appointments.edit', $appointment) }}" class="clinic-action-button">
                                 <i class="bi bi-pencil" aria-hidden="true"></i> Edit appointment
                             </a>

@@ -1,4 +1,4 @@
-<form action="{{ $action }}" method="POST" class="space-y-5">
+<form action="{{ $action }}" method="POST" class="clinic-record-form">
     @csrf
     @if($method !== 'POST')
         @method($method)
@@ -46,10 +46,11 @@
     </div>
 
     <div>
-        <label for="appointment_date" class="block text-sm font-medium text-gray-700">Date and time</label>
+        <label for="appointment_date" class="block text-sm font-medium text-gray-700">Date and time ({{ config('clinic.timezone') }})</label>
         <input id="appointment_date" name="appointment_date" type="datetime-local" required
-            value="{{ old('appointment_date', $appointment->appointment_date?->format('Y-m-d\TH:i')) }}"
+            value="{{ old('appointment_date', $appointment->local_appointment_date?->format('Y-m-d\TH:i')) }}"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+        <p class="mt-1 text-sm text-gray-600">Allow {{ config('clinic.appointment_duration_minutes') }} minutes per appointment. Overlapping bookings are unavailable.</p>
         @error('appointment_date')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
     </div>
 
@@ -59,10 +60,10 @@
         @error('notes')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
     </div>
 
-    <div class="flex items-center gap-3">
-        <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+    <div class="clinic-form-actions">
+        <button type="submit" class="clinic-primary-button">
             {{ $editing ? 'Save Changes' : 'Request Appointment' }}
         </button>
-        <a href="{{ route('appointments.index') }}" class="text-gray-600 hover:text-gray-900">Cancel</a>
+        <a href="{{ route('appointments.index') }}" class="clinic-action-button">Cancel</a>
     </div>
 </form>

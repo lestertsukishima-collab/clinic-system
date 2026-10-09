@@ -1,17 +1,18 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Book an Appointment</h2>
+        <x-record-heading
+            title="Book an Appointment"
+            eyebrow="APPOINTMENTS"
+            :back-url="route('appointments.index')"
+            back-label="Back to appointments"
+        />
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                @include('appointments._form', [
-                    'action' => route('appointments.store'),
-                    'method' => 'POST',
-                    'editing' => false,
-                ])
-            </div>
-        </div>
-    </div>
+    <x-record-form-card title="Appointment details" description="Choose the doctor, service, and appointment time." icon="bi-calendar2-week">
+        @include('appointments._form', [
+            'action' => route('appointments.store'),
+            'method' => 'POST',
+            'editing' => false,
+        ])
+    </x-record-form-card>
 </x-app-layout>

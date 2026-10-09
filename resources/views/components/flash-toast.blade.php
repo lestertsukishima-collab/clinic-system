@@ -1,7 +1,7 @@
 @php
     $toast = session('toast');
 
-    if (!$toast && request()->routeIs('login') && $errors->any()) {
+    if (!$toast && $errors->any()) {
         $toast = [
             'type' => 'error',
             'message' => $errors->first(),

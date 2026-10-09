@@ -55,8 +55,8 @@
                                     <td>{{ $prescription->appointment->doctor->display_name }}</td>
                                     <td>
                                         <div class="clinic-date-cell">
-                                            <span>{{ $prescription->appointment->appointment_date->format('M d, Y') }}</span>
-                                            <small>{{ $prescription->appointment->appointment_date->format('g:i A') }}</small>
+                                            <span>{{ $prescription->appointment->local_appointment_date->format('M d, Y') }}</span>
+                                            <small>{{ $prescription->appointment->local_appointment_date->format('g:i A') }}</small>
                                         </div>
                                     </td>
                                     <td><span class="clinic-diagnosis-preview">{{ \Illuminate\Support\Str::limit($prescription->diagnosis, 68) }}</span></td>

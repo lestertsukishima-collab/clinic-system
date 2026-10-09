@@ -27,7 +27,7 @@
                     <div class="clinic-detail-heading-copy">
                         <p class="clinic-eyebrow mb-1">PRESCRIPTION SUMMARY</p>
                         <h2>{{ $prescription->appointment->patient->name }}</h2>
-                        <p>Appointment on {{ $prescription->appointment->appointment_date->format('M d, Y') }}</p>
+                        <p>Appointment on {{ $prescription->appointment->local_appointment_date->format('M d, Y') }}</p>
                     </div>
                     <span class="clinic-prescription-reference">RX-{{ str_pad((string) $prescription->id, 4, '0', STR_PAD_LEFT) }}</span>
                 </div>
@@ -40,8 +40,8 @@
                     </div>
                     <div class="clinic-detail-item">
                         <span class="clinic-detail-label"><i class="bi bi-calendar2-check" aria-hidden="true"></i> Appointment</span>
-                        <strong>{{ $prescription->appointment->appointment_date->format('M d, Y') }}</strong>
-                        <small>{{ $prescription->appointment->appointment_date->format('g:i A') }}</small>
+                        <strong>{{ $prescription->appointment->local_appointment_date->format('M d, Y') }}</strong>
+                        <small>{{ $prescription->appointment->local_appointment_date->format('g:i A') }}</small>
                     </div>
                 </div>
 

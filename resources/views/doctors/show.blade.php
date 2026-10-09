@@ -1,13 +1,63 @@
 <x-app-layout>
-    <x-slot name="header"><div class="flex items-center justify-between gap-4"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Doctor Details</h2><a href="{{ route('doctors.index') }}" class="text-blue-700 underline">Back to doctors</a></div></x-slot>
-    <div class="py-8"><div class="max-w-3xl mx-auto sm:px-6 lg:px-8"><div class="bg-white shadow-sm sm:rounded-lg p-6 space-y-4">
-        @if(session('success'))<p class="rounded bg-green-100 p-3 text-green-800">{{ session('success') }}</p>@endif
-        <p><strong>Name:</strong> {{ $doctor->display_name }}</p><p><strong>Email:</strong> {{ $doctor->user->email }}</p>
-        <p><strong>Specialization:</strong> {{ $doctor->specialization }}</p><p><strong>Phone:</strong> {{ $doctor->phone ?: 'Not provided' }}</p>
-        <p><strong>Appointments:</strong> {{ $doctor->appointments_count }}</p>
-        <div class="flex gap-3"><a href="{{ route('doctors.edit', $doctor) }}" class="rounded bg-gray-200 px-4 py-2">Edit</a>
-            <form method="POST" action="{{ route('doctors.destroy', $doctor) }}" onsubmit="return confirm('Delete this doctor account?')">@csrf @method('DELETE')<button type="submit" class="rounded bg-red-600 px-4 py-2 text-white">Delete</button></form>
+    <x-slot name="header">
+        <x-record-heading title="Doctor Details" eyebrow="CARE TEAM" :back-url="route('doctors.index')" back-label="Back to doctors" />
+    </x-slot>
+
+    <section class="clinic-record-page">
+        <div class="clinic-record-container clinic-record-container-narrow">
+            @if(session('success'))
+                <div class="clinic-alert clinic-alert-success" role="status">
+                    <i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>{{ session('success') }}</span>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="clinic-alert clinic-alert-error" role="alert">
+                    <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i><span>{{ session('error') }}</span>
+                </div>
+            @endif
+
+            <article class="clinic-detail-card">
+                <div class="clinic-detail-card-header">
+                    <div class="clinic-detail-heading-icon" aria-hidden="true"><i class="bi bi-person-badge"></i></div>
+                    <div class="clinic-detail-heading-copy">
+                        <p class="clinic-eyebrow mb-1">DOCTOR PROFILE</p>
+                        <h2>{{ $doctor->display_name }}</h2>
+                        <p>{{ $doctor->specialization }}</p>
+                    </div>
+                </div>
+
+                <div class="clinic-detail-grid">
+                    <div class="clinic-detail-item">
+                        <span class="clinic-detail-label"><i class="bi bi-envelope" aria-hidden="true"></i> Email</span>
+                        <strong>{{ $doctor->user->email }}</strong>
+                    </div>
+                    <div class="clinic-detail-item">
+                        <span class="clinic-detail-label"><i class="bi bi-telephone" aria-hidden="true"></i> Phone</span>
+                        <strong>{{ $doctor->phone ?: 'Not provided' }}</strong>
+                    </div>
+                    <div class="clinic-detail-item">
+                        <span class="clinic-detail-label"><i class="bi bi-heart-pulse" aria-hidden="true"></i> Specialization</span>
+                        <strong>{{ $doctor->specialization }}</strong>
+                    </div>
+                    <div class="clinic-detail-item">
+                        <span class="clinic-detail-label"><i class="bi bi-calendar2-week" aria-hidden="true"></i> Appointments</span>
+                        <strong>{{ $doctor->appointments_count }}</strong>
+                    </div>
+                </div>
+
+                <div class="clinic-detail-actions">
+                    <a href="{{ route('doctors.edit', $doctor) }}" class="clinic-primary-button">
+                        <i class="bi bi-pencil" aria-hidden="true"></i> Edit doctor
+                    </a>
+                    <form method="POST" action="{{ route('doctors.destroy', $doctor) }}" onsubmit="return confirm('Delete this doctor account?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="clinic-action-button clinic-action-cancel">
+                            <i class="bi bi-trash3" aria-hidden="true"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            </article>
         </div>
-        @if(session('error'))<p class="rounded bg-red-100 p-3 text-red-800">{{ session('error') }}</p>@endif
-    </div></div></div>
+    </section>
 </x-app-layout>

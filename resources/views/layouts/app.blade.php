@@ -8,37 +8,75 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <!-- Bootstrap 5 CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <!-- Bootstrap Icons CDN -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/bootstrap.min.css', 'resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
+        <div
+            class="clinic-app-shell min-h-screen bg-gray-100"
+            x-data="{
+                sidebarOpen: false,
+                closeSidebar() {
+                    this.sidebarOpen = false;
+                    this.$nextTick(() => this.$refs.sidebarToggle.focus());
+                },
+                trapSidebarFocus(event) {
+                    if (!this.sidebarOpen) {
+                        return;
+                    }
+                    const elements = [...this.$refs.sidebar.querySelectorAll('a[href], button')].filter(element => element.offsetParent !== null);
+                    const first = elements[0];
+                    const last = elements[elements.length - 1];
+                    if (event.shiftKey && document.activeElement === first) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (!event.shiftKey && document.activeElement === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
+                }
+            }"
+            x-effect="document.body.style.overflow = sidebarOpen ? 'hidden' : ''"
+            @keydown.escape.window="if (sidebarOpen) closeSidebar()"
+            @resize.window.debounce.150ms="if (window.innerWidth >= 1024) sidebarOpen = false"
+        >
+            <div x-cloak x-show="sidebarOpen" class="clinic-sidebar-backdrop" @click="closeSidebar()" aria-hidden="true"></div>
+
             @include('layouts.navigation')
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
+            <div class="clinic-app-content" :inert="sidebarOpen">
+                <div class="clinic-app-header">
+                    <div class="clinic-mobile-bar">
+                        <button
+                            x-ref="sidebarToggle"
+                            type="button"
+                            class="clinic-sidebar-toggle"
+                            @click="sidebarOpen = true; $nextTick(() => $refs.sidebarClose.focus())"
+                            :aria-expanded="sidebarOpen"
+                            aria-controls="clinic-sidebar"
+                            aria-label="Open navigation menu"
+                        >
+                            <i class="bi bi-list" aria-hidden="true"></i>
+                        </button>
+                        <span class="clinic-app-brand-copy"><strong>Happy Clinic</strong><small>{{ ucfirst(Auth::user()->role) }} workspace</small></span>
                     </div>
-                </header>
-            
-            @endisset
 
-            <!-- Page Content -->
-        <main>
-            {{ $slot }}
-        </main>
+                    @isset($header)
+                        <header class="bg-white shadow">
+                            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                                {{ $header }}
+                            </div>
+                        </header>
+                    @endisset
+                </div>
+
+                <main>
+                    {{ $slot }}
+                </main>
+            </div>
         </div>
         <x-flash-toast />
         <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @vite('resources/js/bootstrap.bundle.min.js')
     </body>
 </html>

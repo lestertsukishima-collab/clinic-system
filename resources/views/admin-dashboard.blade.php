@@ -162,8 +162,8 @@
                                     </td>
                                     <td>
                                         <div class="clinic-date-cell">
-                                            <span>{{ $appointment->appointment_date->format('M d, Y') }}</span>
-                                            <small>{{ $appointment->appointment_date->format('g:i A') }}</small>
+                                            <span>{{ $appointment->local_appointment_date->format('M d, Y') }}</span>
+                                            <small>{{ $appointment->local_appointment_date->format('g:i A') }}</small>
                                         </div>
                                     </td>
                                     <td>

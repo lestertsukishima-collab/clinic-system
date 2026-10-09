@@ -1,6 +1,14 @@
 <x-app-layout>
-    <x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Clinic Service</h2></x-slot>
-    <div class="py-8"><div class="max-w-3xl mx-auto sm:px-6 lg:px-8"><div class="bg-white shadow-sm sm:rounded-lg p-6">
+    <x-slot name="header">
+        <x-record-heading
+            title="Edit Clinic Service"
+            eyebrow="CLINIC MANAGEMENT"
+            :back-url="route('services.index')"
+            back-label="Back to services"
+        />
+    </x-slot>
+
+    <x-record-form-card title="Service information" description="Set the service details and price for clinic appointments." icon="bi-heart-pulse">
         @include('services._form', ['editing' => true])
-    </div></div></div>
+    </x-record-form-card>
 </x-app-layout>

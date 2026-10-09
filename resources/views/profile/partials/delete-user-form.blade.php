@@ -5,7 +5,7 @@
         </h2>
 
         <p class="mt-1 text-sm text-gray-600">
-            {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
+            {{ __('Accounts with appointment or prescription history cannot be deleted. Please contact the clinic administrator if you need help with your account.') }}
         </p>
     </header>
 
@@ -24,13 +24,15 @@
             </h2>
 
             <p class="mt-1 text-sm text-gray-600">
-                {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
+                {{ __('An account without clinic records can be permanently deleted. Enter your password to confirm.') }}
             </p>
+
+            <x-input-error :messages="$errors->userDeletion->get('account')" class="mt-2" />
 
             <div class="mt-6">
                 <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
 
-                <x-text-input
+                <x-password-input
                     id="password"
                     name="password"
                     type="password"

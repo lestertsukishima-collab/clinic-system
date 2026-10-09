@@ -1,4 +1,4 @@
-<form method="POST" action="{{ $editing ? route('doctors.update', $doctor) : route('doctors.store') }}" class="space-y-5">
+<form method="POST" action="{{ $editing ? route('doctors.update', $doctor) : route('doctors.store') }}" class="clinic-record-form">
     @csrf
     @if($editing) @method('PUT') @endif
     <div>
@@ -14,12 +14,12 @@
     @unless($editing)
         <div>
             <label for="password" class="block text-sm font-medium text-gray-700">Temporary password</label>
-            <input id="password" type="password" name="password" required minlength="8" autocomplete="new-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            <x-password-input id="password" type="password" name="password" required minlength="8" autocomplete="new-password" class="mt-1 block w-full" />
             @error('password')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
         </div>
         <div>
             <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm password</label>
-            <input id="password_confirmation" type="password" name="password_confirmation" required minlength="8" autocomplete="new-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            <x-password-input id="password_confirmation" type="password" name="password_confirmation" required minlength="8" autocomplete="new-password" class="mt-1 block w-full" />
         </div>
     @endunless
     <div>
@@ -32,8 +32,8 @@
         <input id="phone" name="phone" value="{{ old('phone', $doctor->phone) }}" maxlength="30" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
         @error('phone')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
     </div>
-    <div class="flex gap-3">
-        <button class="rounded-md bg-blue-600 px-4 py-2 text-white" type="submit">{{ $editing ? 'Save Changes' : 'Create Doctor' }}</button>
-        <a class="px-4 py-2 text-gray-600" href="{{ route('doctors.index') }}">Cancel</a>
+    <div class="clinic-form-actions">
+        <button class="clinic-primary-button" type="submit">{{ $editing ? 'Save Changes' : 'Create Doctor' }}</button>
+        <a class="clinic-action-button" href="{{ route('doctors.index') }}">Cancel</a>
     </div>
 </form>

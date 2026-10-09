@@ -103,8 +103,8 @@
                                     <td class="clinic-service-cell">{{ $appointment->service->name ?? '—' }}</td>
                                     <td>
                                         <div class="clinic-date-cell">
-                                            <span>{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y') }}</span>
-                                            <small>{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('g:i A') }}</small>
+                                            <span>{{ \Carbon\Carbon::parse($appointment->local_appointment_date)->format('M d, Y') }}</span>
+                                            <small>{{ \Carbon\Carbon::parse($appointment->local_appointment_date)->format('g:i A') }}</small>
                                         </div>
                                         </td>
                                         <td>
@@ -130,7 +130,7 @@
                                             <a class="clinic-action-button clinic-action-view" href="{{ route('appointments.show', $appointment) }}">
                                                 View
                                             </a>
-                                            @if(auth()->user()->role === 'admin' || (auth()->user()->role === 'patient' && $appointment->status === 'pending'))
+                                            @if((auth()->user()->role === 'admin' && in_array($appointment->status, ['pending', 'confirmed'], true)) || (auth()->user()->role === 'patient' && $appointment->status === 'pending'))
                                                 <a class="clinic-action-button" href="{{ route('appointments.edit', $appointment) }}">Edit</a>
                                                 <form method="POST" action="{{ route('appointments.destroy', $appointment) }}" onsubmit="return confirm('Cancel this appointment?')">
                                                     @csrf

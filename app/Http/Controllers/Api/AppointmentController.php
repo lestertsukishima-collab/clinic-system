@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\AppointmentWorkflow;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AppointmentRequest;
 use App\Models\Appointment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class AppointmentController extends Controller
 {
@@ -25,31 +26,10 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(AppointmentRequest $request, AppointmentWorkflow $workflow): JsonResponse
     {
         $user = $this->authenticatedUser($request);
-        abort_unless(in_array($user->role, ['admin', 'patient'], true), 403);
-
-        $rules = [
-            'doctor_id' => ['required', 'integer', 'exists:doctors,id'],
-            'service_id' => ['required', 'integer', 'exists:services,id'],
-            'appointment_date' => ['required', 'date', 'after:now'],
-            'notes' => ['nullable', 'string', 'max:5000'],
-        ];
-
-        if ($user->role === 'admin') {
-            $rules['patient_id'] = ['required', 'integer', Rule::exists('users', 'id')->where('role', 'patient')];
-        }
-
-        $validated = $request->validate($rules);
-        $appointment = Appointment::create([
-            'patient_id' => $user->role === 'admin' ? $validated['patient_id'] : $user->id,
-            'doctor_id' => $validated['doctor_id'],
-            'service_id' => $validated['service_id'],
-            'appointment_date' => $validated['appointment_date'],
-            'status' => 'pending',
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        $appointment = $workflow->schedule($user, $request->validated());
 
         return response()->json([
             'status' => 'success',
@@ -69,7 +49,7 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function update(Request $request, Appointment $appointment): JsonResponse
+    public function update(AppointmentRequest $request, Appointment $appointment, AppointmentWorkflow $workflow): JsonResponse
     {
         $user = $this->authenticatedUser($request);
         abort_unless(
@@ -80,25 +60,7 @@ class AppointmentController extends Controller
             404
         );
 
-        $rules = [
-            'doctor_id' => ['required', 'integer', 'exists:doctors,id'],
-            'service_id' => ['required', 'integer', 'exists:services,id'],
-            'appointment_date' => ['required', 'date', 'after:now'],
-            'notes' => ['nullable', 'string', 'max:5000'],
-        ];
-
-        if ($user->role === 'admin') {
-            $rules['patient_id'] = ['sometimes', 'required', 'integer', Rule::exists('users', 'id')->where('role', 'patient')];
-        }
-
-        $validated = $request->validate($rules);
-        $appointment->update([
-            'patient_id' => $user->role === 'admin' ? ($validated['patient_id'] ?? $appointment->patient_id) : $user->id,
-            'doctor_id' => $validated['doctor_id'],
-            'service_id' => $validated['service_id'],
-            'appointment_date' => $validated['appointment_date'],
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        $appointment = $workflow->schedule($user, $request->validated(), $appointment);
 
         return response()->json([
             'status' => 'success',
@@ -107,7 +69,7 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, Appointment $appointment): JsonResponse
+    public function destroy(Request $request, Appointment $appointment, AppointmentWorkflow $workflow): JsonResponse
     {
         $user = $this->authenticatedUser($request);
         abort_unless(
@@ -118,7 +80,7 @@ class AppointmentController extends Controller
             404
         );
 
-        $appointment->update(['status' => 'cancelled']);
+        $appointment = $workflow->cancel($user, $appointment);
 
         return response()->json([
             'status' => 'success',
