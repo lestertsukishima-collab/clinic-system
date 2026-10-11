@@ -2,18 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\DataTable;
+use App\Models\Appointment;
 use App\Models\Prescription;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PatientPrescriptionController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, DataTable $table): View|JsonResponse
     {
+        $query = $this->accessiblePrescriptions($request)->latest()->orderByDesc('id');
+
+        if ($request->has('draw')) {
+            return $table->response($request, $query, [
+                Appointment::select('users.name')->join('users', 'users.id', '=', 'appointments.patient_id')
+                    ->whereColumn('appointments.id', 'prescriptions.appointment_id'),
+                Appointment::select('users.name')->join('doctors', 'doctors.id', '=', 'appointments.doctor_id')
+                    ->join('users', 'users.id', '=', 'doctors.user_id')->whereColumn('appointments.id', 'prescriptions.appointment_id'),
+                Appointment::select('appointment_date')->whereColumn('appointments.id', 'prescriptions.appointment_id'),
+                'diagnosis',
+            ], ['appointment.patient.name', 'appointment.doctor.user.name', 'diagnosis'], 'prescriptions._row', 'prescription');
+        }
+
         return view('prescriptions.index', [
-            'prescriptions' => $this->accessiblePrescriptions($request)
-                ->latest()->orderByDesc('id')->paginate(10),
+            'prescriptions' => $query->paginate(10),
         ]);
     }
 

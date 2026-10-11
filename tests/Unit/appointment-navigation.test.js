@@ -6,7 +6,7 @@ function createPage(url, storage = new Map(), state = null, hasBackLink = false)
     const windowEvents = new Map();
     const pageEvents = new Map();
     const backEvents = new Map();
-    const table = { scrollLeft: 0 };
+    const table = { scrollLeft: 0, style: {}, getBoundingClientRect: () => ({ height: 760 }) };
     const backLink = {
         href: 'https://clinic-system.test/appointments',
         addEventListener: (name, handler) => backEvents.set(name, handler),
@@ -33,14 +33,104 @@ function createPage(url, storage = new Map(), state = null, hasBackLink = false)
         querySelectorAll: () => [table],
         addEventListener: (name, handler) => pageEvents.set(name, handler),
     };
-    const click = (href, overrides = {}) => pageEvents.get('click')({
+    const click = (href, overrides = {}, pagination = false) => pageEvents.get('click')({
         button: 0,
-        target: { closest: () => ({ href }) },
+        target: { closest: selector => selector === '.clinic-pagination a[href]' && !pagination ? null : { href } },
         ...overrides,
     });
+    const paginate = (href, overrides = {}) => click(href, overrides, true);
 
-    return { browser, page, table, backLink, windowEvents, backEvents, click };
+    return { browser, page, table, backLink, windowEvents, pageEvents, backEvents, click, paginate };
 }
+
+test('pagination Next and Previous start at the top without reserving table space', () => {
+    const storage = new Map();
+    const firstUrl = 'https://clinic-system.test/dashboard?schedule=all&page=1';
+    const secondUrl = 'https://clinic-system.test/dashboard?schedule=all&page=2';
+    const first = createPage(firstUrl, storage);
+    setupAppointmentNavigation(first.browser, first.page);
+    first.browser.scrollY = 1240;
+    first.table.scrollLeft = 180;
+    first.paginate(secondUrl);
+    first.windowEvents.get('pagehide')();
+
+    const second = createPage(secondUrl, storage);
+    setupAppointmentNavigation(second.browser, second.page);
+    second.windowEvents.get('pageshow')();
+
+    assert.equal(second.browser.scrollY, 0);
+    assert.equal(second.table.scrollLeft, 180);
+    assert.equal(second.table.style.minHeight, undefined);
+
+    second.browser.scrollY = 400;
+    second.paginate(firstUrl);
+    const returned = createPage(firstUrl, storage);
+    setupAppointmentNavigation(returned.browser, returned.page);
+    returned.windowEvents.get('pageshow')();
+
+    assert.equal(returned.browser.scrollY, 0);
+    assert.equal(returned.table.scrollLeft, 180);
+});
+
+test('old saved table heights do not add blank space when returning to a list', () => {
+    const url = 'https://clinic-system.test/appointments?table_start=10';
+    const list = createPage(url, new Map(), {
+        clinicAppointmentPosition: { url, x: 0, y: 200, tables: [0], tableHeights: [760] },
+    });
+    setupAppointmentNavigation(list.browser, list.page);
+
+    list.windowEvents.get('pageshow')();
+
+    assert.equal(list.browser.scrollY, 200);
+    assert.equal(list.table.style.minHeight, undefined);
+});
+
+test('browser Back restores the source page after following a pagination link', () => {
+    const first = createPage('https://clinic-system.test/dashboard?schedule=all&page=1');
+    setupAppointmentNavigation(first.browser, first.page);
+    first.browser.scrollY = 900;
+    first.paginate('https://clinic-system.test/dashboard?schedule=all&page=2');
+    first.browser.scrollY = 0;
+
+    first.windowEvents.get('pageshow')();
+
+    assert.equal(first.browser.scrollY, 900);
+});
+
+test('opening a pagination link in a new tab does not save a pending scroll position', () => {
+    const storage = new Map();
+    const first = createPage('https://clinic-system.test/dashboard?page=1', storage);
+    setupAppointmentNavigation(first.browser, first.page);
+
+    first.paginate('https://clinic-system.test/dashboard?page=2', { ctrlKey: true });
+
+    assert.equal(storage.size, 0);
+    assert.equal(first.browser.history.state, null);
+});
+
+test('pagination links cannot carry a scroll position to another site or screen', () => {
+    const storage = new Map();
+    const first = createPage('https://clinic-system.test/dashboard?page=1', storage);
+    setupAppointmentNavigation(first.browser, first.page);
+
+    first.paginate('https://example.com/dashboard?page=2');
+    first.paginate('https://clinic-system.test/profile?page=2');
+
+    assert.equal(storage.size, 0);
+});
+
+test('returning to an appointment list restores scrolling after its table finishes loading', () => {
+    const url = 'https://clinic-system.test/appointments?table_start=10';
+    const list = createPage(url, new Map(), {
+        clinicAppointmentPosition: { url, x: 0, y: 900, tables: [180] },
+    });
+    setupAppointmentNavigation(list.browser, list.page);
+
+    list.pageEvents.get('clinic:table-ready')();
+
+    assert.equal(list.browser.scrollY, 900);
+    assert.equal(list.table.scrollLeft, 180);
+});
 
 test('the detail Back link returns to the same filtered page and restores vertical and horizontal scrolling', () => {
     const storage = new Map();

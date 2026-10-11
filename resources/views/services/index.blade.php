@@ -38,7 +38,7 @@
                 </div>
 
                 <div class="clinic-table-wrap">
-                    <table class="clinic-appointments-table clinic-record-table">
+                    <table id="services-table" data-clinic-table data-page-length="15" class="clinic-appointments-table clinic-record-table">
                         <thead>
                             <tr>
                                 <th scope="col">Service</th>
@@ -49,23 +49,7 @@
                         </thead>
                         <tbody>
                             @forelse($services as $service)
-                                <tr>
-                                    <td>
-                                        <div class="clinic-person-cell">
-                                            <span class="clinic-person-avatar" aria-hidden="true"><i class="bi bi-heart-pulse-fill"></i></span>
-                                            <span class="clinic-person-name">{{ $service->name }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="clinic-service-cell">₱{{ number_format((float) $service->price, 2) }}</td>
-                                    <td>{{ $service->appointments_count }}</td>
-                                    <td>
-                                        <div class="clinic-row-actions">
-                                            <a href="{{ route('services.show', $service) }}" class="clinic-action-button clinic-action-view">
-                                                <i class="bi bi-eye" aria-hidden="true"></i> View
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
+                                @include('services._row', ['service' => $service])
                             @empty
                                 <tr>
                                     <td colspan="4">
@@ -85,7 +69,7 @@
                 </div>
 
                 @if($services->hasPages())
-                    <div class="clinic-pagination">{{ $services->links() }}</div>
+                    <div class="clinic-pagination" data-table-fallback>{{ $services->links() }}</div>
                 @endif
             </section>
         </div>

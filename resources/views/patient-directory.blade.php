@@ -14,7 +14,7 @@
                     </div>
                     <span class="clinic-count-pill">{{ $patients->total() }} {{ \Illuminate\Support\Str::plural('patient', $patients->total()) }}</span>
                 </div>
-                <form method="GET" action="{{ route('patients.index') }}" class="clinic-list-filters">
+                <form method="GET" action="{{ route('patients.index') }}" class="clinic-list-filters" data-table-fallback>
                     <div>
                         <label for="patient-search">Search patients</label>
                         <input id="patient-search" type="search" name="search" value="{{ $search }}" maxlength="100" placeholder="Name or email address" class="form-control">
@@ -24,7 +24,7 @@
                     <a href="{{ route('patients.index') }}" class="clinic-action-button clinic-action-view">Clear search</a>
                 </form>
                 <div class="clinic-table-wrap">
-                    <table class="clinic-appointments-table clinic-record-table">
+                    <table id="patients-table" data-clinic-table data-page-length="15" data-table-search="{{ $search }}" class="clinic-appointments-table clinic-record-table">
                         <thead>
                             <tr>
                                 <th scope="col">Patient</th>
@@ -36,13 +36,7 @@
                         </thead>
                         <tbody>
                             @forelse($patients as $patient)
-                                <tr>
-                                    <td><div class="clinic-person-cell"><span class="clinic-person-avatar" aria-hidden="true"><i class="bi bi-person-fill"></i></span><span class="clinic-person-name">{{ $patient->name }}</span></div></td>
-                                    <td>{{ $patient->email }}</td>
-                                    <td>{{ $patient->created_at->timezone(config('clinic.timezone'))->format('M d, Y') }}</td>
-                                    <td>{{ $patient->appointments_count }}</td>
-                                    <td><div class="clinic-row-actions"><a href="{{ route('appointments.index', ['patient_id' => $patient->id]) }}" class="clinic-action-button clinic-action-view" aria-label="View appointments for {{ $patient->name }}">Appointments <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></td>
-                                </tr>
+                                @include('patients._row', ['patient' => $patient])
                             @empty
                                 <tr><td colspan="5"><div class="clinic-empty-state"><span class="clinic-empty-icon" aria-hidden="true"><i class="bi bi-people"></i></span><h3>No patients found</h3><p>{{ $search !== '' ? 'Try another name or email address, or clear your search.' : 'Patient accounts will appear here after registration.' }}</p></div></td></tr>
                             @endforelse
@@ -50,7 +44,7 @@
                     </table>
                 </div>
                 @if($patients->hasPages())
-                    <div class="clinic-pagination">{{ $patients->links() }}</div>
+                    <div class="clinic-pagination" data-table-fallback>{{ $patients->links() }}</div>
                 @endif
             </section>
         </div>

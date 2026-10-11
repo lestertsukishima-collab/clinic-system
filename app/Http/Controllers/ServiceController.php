@@ -2,17 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\DataTable;
 use App\Models\Service;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ServiceController extends Controller
 {
-    public function index(): View
+    public function index(Request $request, DataTable $table): View|JsonResponse
     {
+        $query = Service::withCount('appointments')->latest();
+
+        if ($request->has('draw')) {
+            return $table->response($request, $query,
+                ['name', 'price', 'appointments_count'],
+                ['name', 'description', 'price'], 'services._row', 'service');
+        }
+
         return view('services.index', [
-            'services' => Service::withCount('appointments')->latest()->paginate(15),
+            'services' => $query->paginate(15),
         ]);
     }
 

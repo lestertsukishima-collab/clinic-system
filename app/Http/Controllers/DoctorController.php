@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\DataTable;
 use App\Models\Doctor;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,10 +15,20 @@ use Illuminate\View\View;
 
 class DoctorController extends Controller
 {
-    public function index(): View
+    public function index(Request $request, DataTable $table): View|JsonResponse
     {
+        $query = Doctor::with('user')->withCount('appointments')->latest();
+
+        if ($request->has('draw')) {
+            return $table->response($request, $query, [
+                User::select('name')->whereColumn('users.id', 'doctors.user_id'),
+                User::select('email')->whereColumn('users.id', 'doctors.user_id'),
+                'specialization', 'appointments_count',
+            ], ['user.name', 'user.email', 'specialization'], 'doctors._row', 'doctor');
+        }
+
         return view('doctors.index', [
-            'doctors' => Doctor::with('user')->withCount('appointments')->latest()->paginate(15),
+            'doctors' => $query->paginate(15),
         ]);
     }
 

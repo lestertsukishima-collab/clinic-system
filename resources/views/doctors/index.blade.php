@@ -38,7 +38,7 @@
                 </div>
 
                 <div class="clinic-table-wrap">
-                    <table class="clinic-appointments-table clinic-record-table">
+                    <table id="doctors-table" data-clinic-table data-page-length="15" class="clinic-appointments-table clinic-record-table">
                         <thead>
                             <tr>
                                 <th scope="col">Doctor</th>
@@ -50,24 +50,7 @@
                         </thead>
                         <tbody>
                             @forelse($doctors as $doctor)
-                                <tr>
-                                    <td>
-                                        <div class="clinic-person-cell">
-                                            <span class="clinic-person-avatar" aria-hidden="true"><i class="bi bi-person-badge-fill"></i></span>
-                                            <span class="clinic-person-name">{{ $doctor->display_name }}</span>
-                                        </div>
-                                    </td>
-                                    <td>{{ $doctor->user->email }}</td>
-                                    <td class="clinic-service-cell">{{ $doctor->specialization }}</td>
-                                    <td>{{ $doctor->appointments_count }}</td>
-                                    <td>
-                                        <div class="clinic-row-actions">
-                                            <a class="clinic-action-button clinic-action-view" href="{{ route('doctors.show', $doctor) }}">
-                                                <i class="bi bi-eye" aria-hidden="true"></i> View
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
+                                @include('doctors._row', ['doctor' => $doctor])
                             @empty
                                 <tr>
                                     <td colspan="5">
@@ -87,7 +70,7 @@
                 </div>
 
                 @if($doctors->hasPages())
-                    <div class="clinic-pagination">{{ $doctors->links() }}</div>
+                    <div class="clinic-pagination" data-table-fallback>{{ $doctors->links() }}</div>
                 @endif
             </section>
         </div>

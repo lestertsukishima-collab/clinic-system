@@ -1,5 +1,6 @@
 @import './figtree.css';
 @import './bootstrap-icons.min.css';
+@import 'datatables.net-dt/css';
 
 @tailwind base;
 @tailwind components;
@@ -1145,7 +1146,7 @@
 .clinic-home-features {
     width: min(1160px, calc(100% - 3rem));
     margin: 0 auto;
-    padding: 5.5rem 0 5.8rem;
+    padding: 2.5rem 0 5.8rem;
 }
 
 .clinic-home-section-heading {
@@ -1475,7 +1476,7 @@
 
     .clinic-home-features {
         width: min(100% - 2rem, 500px);
-        padding: 3.8rem 0;
+        padding: 2.8rem 0 3.8rem;
     }
 
     .clinic-home-section-heading {
@@ -2888,17 +2889,92 @@ header:has(.clinic-record-heading) {
     margin: 0 auto;
 }
 
+.clinic-record-list-card .dt-container {
+    --dt-header_padding: 0.65rem 0.75rem;
+    --dt-header_border: 1px solid #e9efee;
+    --dt-body_padding: 0.6rem 0.75rem;
+    color: var(--clinic-muted);
+    font-size: 0.82rem;
+}
+
+.clinic-record-list-card .dt-layout-row:not(.dt-layout-table) {
+    gap: 1rem;
+    margin: 0;
+    padding: 1.1rem 1.55rem;
+}
+
+.clinic-record-list-card .dt-input {
+    margin-inline: 0.45rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #d7e3df;
+    border-radius: 0.55rem;
+    background: #fff;
+    color: var(--clinic-ink);
+    font-size: 0.82rem;
+}
+
+.clinic-record-list-card .dt-input:focus {
+    border-color: var(--clinic-teal);
+    outline: 2px solid rgba(20, 125, 115, 0.2);
+    outline-offset: 1px;
+}
+
+.clinic-record-list-card .dt-paging .dt-paging-button.current,
+.clinic-record-list-card .dt-paging .dt-paging-button.current:hover {
+    border-color: var(--clinic-teal);
+    border-radius: 0.45rem;
+    background: var(--clinic-teal);
+    color: #fff !important;
+}
+
+.clinic-record-list-card table.dataTable {
+    margin: 0;
+    border-collapse: collapse;
+}
+
+.clinic-record-list-card table.dataTable th,
+.clinic-record-list-card table.dataTable td {
+    text-align: left;
+}
+
+.clinic-record-list-card table.dataTable th:last-child,
+.clinic-record-list-card table.dataTable td:last-child {
+    text-align: right;
+}
+
 .clinic-record-list-card .clinic-card-heading {
     padding-top: 1.55rem;
     padding-bottom: 1.3rem;
 }
 
 .clinic-record-table {
-    min-width: 860px;
+    min-width: 760px;
+}
+
+.clinic-record-table th {
+    padding: 0.65rem 0.75rem;
+}
+
+.clinic-record-table .clinic-person-cell {
+    min-width: 0;
+    gap: 0.5rem;
+}
+
+.clinic-record-table .clinic-person-avatar {
+    flex-basis: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.55rem;
+}
+
+.clinic-record-table th:nth-last-child(2),
+.clinic-record-table td:nth-last-child(2) {
+    width: auto;
 }
 
 .clinic-record-table th:last-child,
 .clinic-record-table td:last-child {
+    width: 5.5rem;
     text-align: right;
 }
 
@@ -2908,10 +2984,19 @@ header:has(.clinic-record-heading) {
 
 .clinic-record-table .clinic-action-button {
     gap: 0.42rem;
+    min-height: 1.75rem;
+    padding: 0.3rem 0.5rem;
+}
+
+.clinic-record-table .clinic-status {
+    gap: 0.35rem;
+    padding: 0.3rem 0.5rem;
 }
 
 .clinic-record-table tbody td {
-    height: 4.7rem;
+    height: 3.5rem;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.82rem;
 }
 
 .clinic-prescription-table {

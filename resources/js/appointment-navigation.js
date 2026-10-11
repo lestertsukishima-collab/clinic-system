@@ -62,6 +62,7 @@ export function setupAppointmentNavigation(browser, page) {
     };
 
     browser.addEventListener('pageshow', restore);
+    page.addEventListener('clinic:table-ready', restore, { once: true });
     browser.addEventListener('pagehide', () => {
         if (browser.history.state?.[stateKey]) {
             remember(positionNow());
@@ -87,8 +88,22 @@ export function setupAppointmentNavigation(browser, page) {
     }
 
     page.addEventListener('click', (event) => {
-        const link = event.target.closest('a[data-appointment-view]');
+        const paginationLink = event.target.closest('.clinic-pagination a[href]');
+        const link = paginationLink ?? event.target.closest('a[data-appointment-view]');
         if (!link || !followsInThisTab(event, link)) {
+            return;
+        }
+
+        if (paginationLink) {
+            const destination = new URL(link.href, browser.location.href);
+            const source = new URL(browser.location.href);
+            if (destination.origin !== source.origin || destination.pathname !== source.pathname) {
+                return;
+            }
+
+            const position = positionNow();
+            remember(position);
+            write(returnKey, { ...position, url: destination.href, y: 0 });
             return;
         }
 

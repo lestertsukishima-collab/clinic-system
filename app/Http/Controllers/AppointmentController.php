@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\AppointmentWorkflow;
+use App\DataTable;
 use App\Http\Requests\AppointmentRequest;
 use App\Mail\AppointmentConfirmed;
 use App\Models\Appointment;
@@ -10,6 +11,7 @@ use App\Models\Doctor;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -19,7 +21,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AppointmentController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, DataTable $table): View|JsonResponse
     {
         $user = $this->authenticatedUser($request);
         $filters = $request->validate([
@@ -46,11 +48,21 @@ class AppointmentController extends Controller
             $query->where('patient_id', $selectedPatient->id);
         }
 
-        $appointments = $query
+        $query
             ->orderBy('appointment_date', ($filters['date'] ?? null) ? 'asc' : 'desc')
-            ->orderByDesc('id')
-            ->paginate(10)
-            ->withQueryString();
+            ->orderByDesc('id');
+
+        if ($request->has('draw')) {
+            return $table->response($request, $query, [
+                User::select('name')->whereColumn('users.id', 'appointments.patient_id'),
+                Doctor::select('users.name')->join('users', 'users.id', '=', 'doctors.user_id')
+                    ->whereColumn('doctors.id', 'appointments.doctor_id'),
+                Service::select('name')->whereColumn('services.id', 'appointments.service_id'),
+                'created_at', 'appointment_date', 'status',
+            ], ['patient.name', 'doctor.user.name', 'service.name', 'status'], 'appointments._row', 'appointment');
+        }
+
+        $appointments = $query->paginate(10)->withQueryString();
 
         return view('appointments.index', compact('appointments', 'filters', 'selectedPatient'));
     }
