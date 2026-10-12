@@ -1,0 +1,3 @@
+@layer theme, bootstrap, base, components, utilities;
+
+@import './bootstrap.min.css' layer(bootstrap);
