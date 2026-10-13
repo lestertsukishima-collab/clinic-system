@@ -14,6 +14,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(ClinicSeeder::class);
+        $this->call(app()->isProduction() ? ProductionAdminSeeder::class : ClinicSeeder::class);
     }
 }
