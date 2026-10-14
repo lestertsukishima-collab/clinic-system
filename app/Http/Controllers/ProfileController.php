@@ -64,6 +64,11 @@ class ProfileController extends Controller
     {
         $request->validate([
             'profile_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            'profile_photo.uploaded' => 'The photo could not be uploaded. Choose a JPG, PNG, or WebP image up to 2 MB and try again.',
+            'profile_photo.max' => 'The photo must not be larger than 2 MB.',
+            'profile_photo.image' => 'Choose a valid JPG, PNG, or WebP image.',
+            'profile_photo.mimes' => 'Choose a JPG, PNG, or WebP image.',
         ]);
 
         $user = $request->user();

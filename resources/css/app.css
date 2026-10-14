@@ -107,6 +107,10 @@
     object-position: center;
 }
 
+[data-profile-photo-form] [hidden] {
+    display: none;
+}
+
 .clinic-profile-photo-placeholder {
     display: flex;
     align-items: center;

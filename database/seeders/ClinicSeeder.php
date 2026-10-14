@@ -84,7 +84,7 @@ class ClinicSeeder extends Seeder
     /**
      * @return array{admin: string, doctor: string, patient: string}
      */
-    private function demoPasswords(): array
+    public function demoPasswords(): array
     {
         $passwords = config('clinic.demo_passwords');
 
