@@ -9,7 +9,8 @@ function createTable(url, fetchResponse = async () => ({ ok: true, json: async (
     const messages = [];
     const requests = [];
     const tableWrapper = { scrollLeft: 0, style: {}, getBoundingClientRect: () => ({ height: 760 }) };
-    const card = { querySelectorAll: () => fallbacks, prepend: message => messages.push(message) };
+    const pagination = { offsetTop: 1500, getBoundingClientRect: () => ({ top: pagination.offsetTop - browser.scrollY }) };
+    const card = { querySelector: () => pagination, querySelectorAll: () => fallbacks, prepend: message => messages.push(message) };
     const table = {
         innerHTML: 'Original table rows',
         dataset: { pageLength: '10', ...dataset },
@@ -54,10 +55,10 @@ function createTable(url, fetchResponse = async () => ({ ok: true, json: async (
         draw: 1, start: 0, length: 10, search: { value: '' }, order: [], ...overrides,
     }, callback);
 
-    return { browser, table, tableWrapper, options, requests, fallbacks, messages, request, isDestroyed: () => destroyed };
+    return { browser, table, tableWrapper, pagination, card, options, requests, fallbacks, messages, request, isDestroyed: () => destroyed };
 }
 
-test('DataTables pagination starts at the top and clears reserved space on a shorter page', async () => {
+test('DataTables pagination keeps the scroll position and clears reserved space', async () => {
     const fixture = createTable('https://clinic-system.test/appointments');
     await fixture.request();
     fixture.browser.scrollY = 900;
@@ -68,14 +69,47 @@ test('DataTables pagination starts at the top and clears reserved space on a sho
         fixture.tableWrapper.scrollLeft = 0;
     });
 
-    assert.equal(fixture.browser.scrollY, 0);
+    assert.equal(fixture.browser.scrollY, 900);
     assert.equal(fixture.tableWrapper.scrollLeft, 180);
     assert.equal(fixture.tableWrapper.style.minHeight, '');
 
     fixture.browser.scrollY = 400;
     await fixture.request({ draw: 3, start: 0 });
 
-    assert.equal(fixture.browser.scrollY, 0);
+    assert.equal(fixture.browser.scrollY, 400);
+});
+
+test('DataTables pagination stays visible when the new page has fewer rows', async () => {
+    const fixture = createTable('https://clinic-system.test/appointments');
+    await fixture.request();
+    fixture.browser.scrollY = 900;
+
+    await fixture.request({ draw: 2, start: 10 }, () => {
+        fixture.pagination.offsetTop = 1000;
+    });
+
+    assert.equal(fixture.pagination.getBoundingClientRect().top, 600);
+    assert.equal(fixture.browser.scrollY, 400);
+    assert.equal(fixture.tableWrapper.style.minHeight, '');
+
+    await fixture.request({ draw: 3, start: 0 }, () => {
+        fixture.pagination.offsetTop = 1500;
+    });
+
+    assert.equal(fixture.pagination.getBoundingClientRect().top, 600);
+    assert.equal(fixture.browser.scrollY, 900);
+});
+
+test('DataTables keeps the current scroll position if pagination controls disappear', async () => {
+    const fixture = createTable('https://clinic-system.test/appointments');
+    await fixture.request();
+    fixture.browser.scrollY = 900;
+
+    await fixture.request({ draw: 2, start: 10 }, () => {
+        fixture.card.querySelector = () => null;
+    });
+
+    assert.equal(fixture.browser.scrollY, 900);
 });
 
 test('changing a DataTables search clears old reserved height without resetting scroll', async () => {

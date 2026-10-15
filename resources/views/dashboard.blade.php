@@ -30,6 +30,8 @@
                 <div class="clinic-alert clinic-alert-error" role="alert"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i><span>{{ session('error') }}</span></div>
             @endif
 
+            <x-doctor-availability-notices :unavailabilities="$unavailabilities" :affected-appointments="$affectedAppointments" />
+
             <div class="clinic-admin-stat-grid">
                 <a href="{{ route('appointments.index') }}" class="clinic-admin-stat-card clinic-admin-stat-link">
                     <div class="clinic-admin-stat-topline"><span class="clinic-admin-stat-icon clinic-stat-blue" aria-hidden="true"><i class="bi bi-calendar2-week"></i></span><span class="clinic-admin-stat-period">ALL DATES</span></div>

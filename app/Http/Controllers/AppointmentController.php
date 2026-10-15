@@ -10,6 +10,7 @@ use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Service;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -99,6 +100,11 @@ class AppointmentController extends Controller
 
         return view('appointments.show', [
             'appointment' => $appointment,
+            'doctorUnavailable' => in_array($appointment->status, ['pending', 'confirmed'], true)
+                && $appointment->doctor->unavailabilities()->overlapping(
+                    CarbonImmutable::instance($appointment->appointment_date),
+                    CarbonImmutable::instance($appointment->appointment_date)->addMinutes(config('clinic.appointment_duration_minutes')),
+                )->exists(),
         ]);
     }
 

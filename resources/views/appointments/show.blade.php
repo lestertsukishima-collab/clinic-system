@@ -21,6 +21,9 @@
             @endif
 
             <x-input-error :messages="$errors->get('appointment_date')" class="mb-4" />
+            @if($doctorUnavailable)
+                <div class="clinic-alert clinic-alert-error" role="alert">{{ $appointment->doctor->display_name }} is unavailable at this appointment time. Please contact the clinic to arrange another time or doctor.</div>
+            @endif
 
             <article class="clinic-detail-card">
                 <div class="clinic-detail-card-header">
@@ -41,8 +44,8 @@
                         <h3 id="confirm-request-title" class="clinic-detail-label">Confirm this request</h3>
                         <form id="appointment-confirmation-form" method="POST" action="{{ route('appointments.confirm', $appointment) }}" class="clinic-record-form">
                             @csrf
-                            @unless($appointment->appointment_date->isFuture())
-                                <p class="clinic-card-description">The scheduled time has passed. Agree on a new time with the patient, then reschedule and confirm this request. The original request date stays unchanged.</p>
+                            @if(! $appointment->appointment_date->isFuture() || $doctorUnavailable)
+                                <p class="clinic-card-description">{{ $doctorUnavailable ? 'The doctor is unavailable at the scheduled time.' : 'The scheduled time has passed.' }} Agree on a new time with the patient, then reschedule and confirm this request. The original request date stays unchanged.</p>
                                 <div>
                                     <label for="confirmation-appointment-date" class="block text-sm font-medium text-gray-700">New visit date and time ({{ config('clinic.timezone') }})</label>
                                     <input id="confirmation-appointment-date" name="appointment_date" type="datetime-local" required
@@ -51,9 +54,9 @@
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                                     <p class="mt-1 text-sm text-gray-600">Allow {{ config('clinic.appointment_duration_minutes') }} minutes. Overlapping bookings are unavailable.</p>
                                 </div>
-                            @endunless
+                            @endif
                             <div class="clinic-form-actions">
-                                <button class="clinic-primary-button" type="submit"><i class="bi bi-check-lg" aria-hidden="true"></i> {{ $appointment->appointment_date->isFuture() ? 'Confirm appointment' : 'Reschedule and confirm' }}</button>
+                                <button class="clinic-primary-button" type="submit"><i class="bi bi-check-lg" aria-hidden="true"></i> {{ $appointment->appointment_date->isFuture() && ! $doctorUnavailable ? 'Confirm appointment' : 'Reschedule and confirm' }}</button>
                             </div>
                         </form>
                     </section>

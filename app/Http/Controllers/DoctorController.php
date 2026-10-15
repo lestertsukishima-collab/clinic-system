@@ -69,7 +69,8 @@ class DoctorController extends Controller
     public function show(Doctor $doctor): View
     {
         return view('doctors.show', [
-            'doctor' => $doctor->load('user')->loadCount('appointments'),
+            'doctor' => $doctor->load(['user', 'unavailabilities' => fn ($query) => $query
+                ->where('ends_at', '>', now())->orderBy('starts_at')->orderBy('id')])->loadCount('appointments'),
         ]);
     }
 

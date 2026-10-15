@@ -4,6 +4,7 @@ namespace App;
 
 use App\Models\Appointment;
 use App\Models\Doctor;
+use App\Models\DoctorUnavailability;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -125,6 +126,53 @@ class AppointmentWorkflow
         }, 'userDeletion');
     }
 
+    public function markDoctorUnavailable(User $user, Doctor $doctor, CarbonImmutable $start, CarbonImmutable $end): DoctorUnavailability
+    {
+        return $this->synchronized(function () use ($user, $doctor, $start, $end): DoctorUnavailability {
+            $this->authorizeAvailabilityChange($user, $doctor);
+
+            if ($end <= $start || ! $end->isFuture()) {
+                throw ValidationException::withMessages([
+                    'ends_at' => 'The end time must be after the start time and in the future.',
+                ]);
+            }
+
+            return $doctor->unavailabilities()->create(['starts_at' => $start->utc(), 'ends_at' => $end->utc()]);
+        });
+    }
+
+    public function removeDoctorUnavailability(User $user, DoctorUnavailability $unavailability): void
+    {
+        $this->synchronized(function () use ($user, $unavailability): void {
+            $this->authorizeAvailabilityChange($user, $unavailability->doctor);
+            $unavailability->delete();
+        });
+    }
+
+    public function doctorAvailabilityMessage(int $doctorId, CarbonImmutable $date, ?int $appointmentId = null): ?string
+    {
+        $duration = config('clinic.appointment_duration_minutes');
+
+        if (DoctorUnavailability::query()->where('doctor_id', $doctorId)
+            ->overlapping($date, $date->addMinutes($duration))->exists()) {
+            return 'This doctor is unavailable at the selected time. Please choose another time or doctor.';
+        }
+
+        if (Appointment::query()->where('doctor_id', $doctorId)->where('status', '!=', 'cancelled')
+            ->when($appointmentId !== null, fn (Builder $query) => $query->where('id', '!=', $appointmentId))
+            ->where('appointment_date', '>', $date->subMinutes($duration))
+            ->where('appointment_date', '<', $date->addMinutes($duration))->exists()) {
+            return 'This doctor already has an appointment at the selected time. Please choose another time or doctor.';
+        }
+
+        return null;
+    }
+
+    private function authorizeAvailabilityChange(User $user, Doctor $doctor): void
+    {
+        abort_unless($user->role === 'admin' || ($user->role === 'doctor' && $doctor->user_id === $user->id), 403);
+    }
+
     private function ensureFutureDate(CarbonImmutable $date): void
     {
         if (! $date->isFuture()) {
@@ -137,6 +185,13 @@ class AppointmentWorkflow
     private function ensureAvailable(int $doctorId, int $patientId, CarbonImmutable $date, ?int $appointmentId): void
     {
         $duration = config('clinic.appointment_duration_minutes');
+        if (DoctorUnavailability::query()->where('doctor_id', $doctorId)
+            ->overlapping($date, $date->addMinutes($duration))->exists()) {
+            throw ValidationException::withMessages([
+                'appointment_date' => 'This doctor is unavailable at the selected time. Please choose another time or doctor.',
+            ]);
+        }
+
         $hasConflict = Appointment::query()
             ->where('status', '!=', 'cancelled')
             ->when($appointmentId !== null, fn (Builder $query) => $query->where('id', '!=', $appointmentId))

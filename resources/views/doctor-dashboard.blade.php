@@ -27,6 +27,15 @@
                 <div class="clinic-alert clinic-alert-error" role="alert">Your doctor profile is not linked yet. Please contact the clinic administrator to set up your schedule.</div>
             @endunless
 
+            @if(session('success'))
+                <div class="clinic-alert clinic-alert-success" role="status">{{ session('success') }}</div>
+            @endif
+            <x-input-error :messages="$errors->all()" class="mb-4" />
+            <x-doctor-availability-notices :unavailabilities="$unavailabilities" :affected-appointments="$affectedAppointments" />
+            @if($doctor)
+                <x-doctor-availability-form :doctor="$doctor" :unavailabilities="$unavailabilities" />
+            @endif
+
             <div class="clinic-admin-stat-grid">
                 <a href="{{ route('appointments.index', ['date' => $clinicToday->toDateString()]) }}" class="clinic-admin-stat-card clinic-admin-stat-link">
                     <div class="clinic-admin-stat-topline"><span class="clinic-admin-stat-icon clinic-stat-blue" aria-hidden="true"><i class="bi bi-calendar2-week"></i></span><span class="clinic-admin-stat-period">TODAY</span></div>

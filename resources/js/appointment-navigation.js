@@ -51,7 +51,13 @@ export function setupAppointmentNavigation(browser, page) {
         }
 
         const applyPosition = () => {
-            browser.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
+            const pagination = position.pagination
+                ? page.querySelectorAll('.clinic-pagination')[position.pagination.index]
+                : null;
+            const top = pagination
+                ? browser.scrollY + pagination.getBoundingClientRect().top - position.pagination.top
+                : position.y;
+            browser.scrollTo({ left: position.x, top, behavior: 'instant' });
             page.querySelectorAll('.clinic-table-wrap').forEach((table, index) => {
                 table.scrollLeft = position.tables[index] ?? 0;
             });
@@ -102,8 +108,16 @@ export function setupAppointmentNavigation(browser, page) {
             }
 
             const position = positionNow();
+            const pagination = paginationLink.closest('.clinic-pagination');
             remember(position);
-            write(returnKey, { ...position, url: destination.href, y: 0 });
+            write(returnKey, {
+                ...position,
+                url: destination.href,
+                pagination: {
+                    index: [...page.querySelectorAll('.clinic-pagination')].indexOf(pagination),
+                    top: pagination.getBoundingClientRect().top,
+                },
+            });
             return;
         }
 

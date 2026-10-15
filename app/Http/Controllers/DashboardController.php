@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\Doctor;
+use App\Models\DoctorUnavailability;
 use App\Models\Prescription;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -18,7 +20,7 @@ class DashboardController extends Controller
         abort_unless($user instanceof User && in_array($user->role, ['admin', 'doctor', 'patient'], true), 403);
 
         if ($user->role === 'admin') {
-            return $this->adminDashboard();
+            return $this->adminDashboard()->with($this->availabilityNotices($user));
         }
 
         if ($user->role === 'doctor') {
@@ -26,10 +28,39 @@ class DashboardController extends Controller
                 'schedule' => ['nullable', 'in:all,today'],
             ]);
 
-            return $this->doctorDashboard($user, $validated['schedule'] ?? 'all');
+            return $this->doctorDashboard($user, $validated['schedule'] ?? 'all')->with($this->availabilityNotices($user));
         }
 
-        return $this->patientDashboard($user);
+        return $this->patientDashboard($user)->with($this->availabilityNotices($user));
+    }
+
+    /**
+     * @return array{unavailabilities: \Illuminate\Database\Eloquent\Collection<int, DoctorUnavailability>, affectedAppointments: Collection<int, Appointment>}
+     */
+    private function availabilityNotices(User $user): array
+    {
+        $unavailabilities = DoctorUnavailability::query()->with('doctor.user')
+            ->where('ends_at', '>', now())
+            ->when($user->role === 'doctor', fn (Builder $query) => $query
+                ->whereHas('doctor', fn (Builder $doctor) => $doctor->where('user_id', $user->id)))
+            ->orderBy('starts_at')->orderBy('id')->get();
+        $affectedAppointments = collect();
+
+        if ($unavailabilities->isNotEmpty()) {
+            $affectedAppointments = Appointment::query()->with(['doctor.user', 'patient'])
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->where('appointment_date', '>', now()->subMinutes(config('clinic.appointment_duration_minutes')))
+                ->when($user->role === 'patient', fn (Builder $query) => $query->where('patient_id', $user->id))
+                ->where(function (Builder $query) use ($unavailabilities): void {
+                    foreach ($unavailabilities as $unavailability) {
+                        $query->orWhere(fn (Builder $booking) => $booking->where('doctor_id', $unavailability->doctor_id)
+                            ->where('appointment_date', '>', $unavailability->starts_at->subMinutes(config('clinic.appointment_duration_minutes')))
+                            ->where('appointment_date', '<', $unavailability->ends_at));
+                    }
+                })->orderBy('appointment_date')->orderBy('id')->get();
+        }
+
+        return compact('unavailabilities', 'affectedAppointments');
     }
 
     private function patientDashboard(User $user): View

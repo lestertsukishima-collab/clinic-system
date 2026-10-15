@@ -58,6 +58,9 @@
                     </form>
                 </div>
             </article>
+
+            <x-input-error :messages="$errors->all()" class="mb-4" />
+            <x-doctor-availability-form :doctor="$doctor" :unavailabilities="$doctor->unavailabilities" />
         </div>
     </section>
 </x-app-layout>

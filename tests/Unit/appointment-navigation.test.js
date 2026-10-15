@@ -7,6 +7,7 @@ function createPage(url, storage = new Map(), state = null, hasBackLink = false)
     const pageEvents = new Map();
     const backEvents = new Map();
     const table = { scrollLeft: 0, style: {}, getBoundingClientRect: () => ({ height: 760 }) };
+    const pagination = { offsetTop: 1800, getBoundingClientRect: () => ({ top: pagination.offsetTop - browser.scrollY }) };
     const backLink = {
         href: 'https://clinic-system.test/appointments',
         addEventListener: (name, handler) => backEvents.set(name, handler),
@@ -30,20 +31,23 @@ function createPage(url, storage = new Map(), state = null, hasBackLink = false)
     };
     const page = {
         querySelector: () => hasBackLink ? backLink : null,
-        querySelectorAll: () => [table],
+        querySelectorAll: selector => selector === '.clinic-pagination' ? [pagination] : [table],
         addEventListener: (name, handler) => pageEvents.set(name, handler),
     };
     const click = (href, overrides = {}, pagination = false) => pageEvents.get('click')({
         button: 0,
-        target: { closest: selector => selector === '.clinic-pagination a[href]' && !pagination ? null : { href } },
+        target: { closest: selector => selector === '.clinic-pagination a[href]' && !pagination ? null : {
+            href,
+            closest: () => page.querySelectorAll('.clinic-pagination')[0],
+        } },
         ...overrides,
     });
     const paginate = (href, overrides = {}) => click(href, overrides, true);
 
-    return { browser, page, table, backLink, windowEvents, pageEvents, backEvents, click, paginate };
+    return { browser, page, table, pagination, backLink, windowEvents, pageEvents, backEvents, click, paginate };
 }
 
-test('pagination Next and Previous start at the top without reserving table space', () => {
+test('pagination Next and Previous keep the controls in place without reserving table space', () => {
     const storage = new Map();
     const firstUrl = 'https://clinic-system.test/dashboard?schedule=all&page=1';
     const secondUrl = 'https://clinic-system.test/dashboard?schedule=all&page=2';
@@ -58,7 +62,7 @@ test('pagination Next and Previous start at the top without reserving table spac
     setupAppointmentNavigation(second.browser, second.page);
     second.windowEvents.get('pageshow')();
 
-    assert.equal(second.browser.scrollY, 0);
+    assert.equal(second.browser.scrollY, 1240);
     assert.equal(second.table.scrollLeft, 180);
     assert.equal(second.table.style.minHeight, undefined);
 
@@ -68,8 +72,50 @@ test('pagination Next and Previous start at the top without reserving table spac
     setupAppointmentNavigation(returned.browser, returned.page);
     returned.windowEvents.get('pageshow')();
 
-    assert.equal(returned.browser.scrollY, 0);
+    assert.equal(returned.browser.scrollY, 400);
     assert.equal(returned.table.scrollLeft, 180);
+});
+
+test('numbered pagination stays visible when moving between full and shorter dashboard pages', () => {
+    const storage = new Map();
+    const secondUrl = 'https://clinic-system.test/dashboard?schedule=all&page=2';
+    const lastUrl = 'https://clinic-system.test/dashboard?schedule=all&page=3';
+    const second = createPage(secondUrl, storage);
+    setupAppointmentNavigation(second.browser, second.page);
+    second.browser.scrollY = 1240;
+    second.paginate(lastUrl);
+
+    const last = createPage(lastUrl, storage);
+    last.pagination.offsetTop = 1100;
+    setupAppointmentNavigation(last.browser, last.page);
+    last.windowEvents.get('pageshow')();
+
+    assert.equal(last.pagination.getBoundingClientRect().top, 560);
+    assert.equal(last.browser.scrollY, 540);
+    assert.equal(last.table.style.minHeight, undefined);
+
+    last.paginate(secondUrl);
+    const returned = createPage(secondUrl, storage);
+    setupAppointmentNavigation(returned.browser, returned.page);
+    returned.windowEvents.get('pageshow')();
+
+    assert.equal(returned.pagination.getBoundingClientRect().top, 560);
+    assert.equal(returned.browser.scrollY, 1240);
+});
+
+test('pagination falls back to the saved scroll position if the controls disappear', () => {
+    const storage = new Map();
+    const first = createPage('https://clinic-system.test/dashboard?page=1', storage);
+    setupAppointmentNavigation(first.browser, first.page);
+    first.browser.scrollY = 900;
+    first.paginate('https://clinic-system.test/dashboard?page=2');
+    const next = createPage('https://clinic-system.test/dashboard?page=2', storage);
+    next.page.querySelectorAll = selector => selector === '.clinic-pagination' ? [] : [next.table];
+
+    setupAppointmentNavigation(next.browser, next.page);
+    next.windowEvents.get('pageshow')();
+
+    assert.equal(next.browser.scrollY, 900);
 });
 
 test('old saved table heights do not add blank space when returning to a list', () => {

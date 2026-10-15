@@ -28,6 +28,9 @@
                 </div>
             </div>
 
+            <x-doctor-availability-notices :unavailabilities="$unavailabilities" :affected-appointments="$affectedAppointments" />
+            <p class="clinic-card-description"><a href="{{ route('doctors.index') }}" class="clinic-admin-view-all">Manage doctor availability from a doctor's details.</a></p>
+
             <div class="clinic-admin-stat-grid">
                 <article class="clinic-admin-stat-card">
                     <div class="clinic-admin-stat-topline">

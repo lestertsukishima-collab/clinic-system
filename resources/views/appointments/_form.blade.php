@@ -1,4 +1,4 @@
-<form action="{{ $action }}" method="POST" class="clinic-record-form">
+<form action="{{ $action }}" method="POST" class="clinic-record-form" data-appointment-availability data-appointment-id="{{ $appointment->id }}">
     @csrf
     @if($method !== 'POST')
         @method($method)
@@ -28,7 +28,7 @@
         <select id="doctor_id" name="doctor_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             <option value="">Select a doctor</option>
             @foreach($doctors as $doctor)
-                <option value="{{ $doctor->id }}" @selected((string) old('doctor_id', $appointment->doctor_id) === (string) $doctor->id)>
+                <option value="{{ $doctor->id }}" data-availability-url="{{ route('doctors.availability.show', $doctor) }}" @selected((string) old('doctor_id', $appointment->doctor_id) === (string) $doctor->id)>
                     {{ $doctor->display_name }} — {{ $doctor->specialization }}
                 </option>
             @endforeach
@@ -55,6 +55,7 @@
             value="{{ old('appointment_date', $appointment->local_appointment_date?->format('Y-m-d\TH:i')) }}"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
         <p class="mt-1 text-sm text-gray-600">Allow {{ config('clinic.appointment_duration_minutes') }} minutes per appointment. Overlapping bookings are unavailable.</p>
+        <p data-availability-message class="mt-1 text-sm text-red-600" role="status" aria-live="polite" hidden></p>
         @error('appointment_date')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
     </div>
 

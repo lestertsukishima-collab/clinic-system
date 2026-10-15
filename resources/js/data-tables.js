@@ -74,11 +74,20 @@ export function setupDataTables(DataTable, browser, page) {
                     });
                     const sameResults = previousDraw && previousDraw.search === data.search.value && previousDraw.length === data.length;
                     const paging = sameResults && previousDraw.start !== data.start;
-                    const position = { x: browser.scrollX, left: tableWrapper.scrollLeft };
+                    const position = {
+                        x: browser.scrollX,
+                        y: browser.scrollY,
+                        left: tableWrapper.scrollLeft,
+                        paginationTop: card.querySelector('.dt-paging')?.getBoundingClientRect().top,
+                    };
                     tableWrapper.style.minHeight = '';
                     callback({ ...json, data: rows });
                     if (paging) {
-                        browser.scrollTo({ left: position.x, top: 0, behavior: 'instant' });
+                        const pagination = card.querySelector('.dt-paging');
+                        const top = pagination && position.paginationTop !== undefined
+                            ? browser.scrollY + pagination.getBoundingClientRect().top - position.paginationTop
+                            : position.y;
+                        browser.scrollTo({ left: position.x, top, behavior: 'instant' });
                         tableWrapper.scrollLeft = position.left;
                     }
                     previousDraw = { search: data.search.value, length: data.length, start: data.start };

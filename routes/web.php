@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientPrescriptionController;
@@ -24,6 +25,7 @@ Route::middleware('auth')->group(function (): void {
 });
 
 Route::middleware(['auth', 'role:patient,doctor,admin'])->group(function (): void {
+    Route::get('/doctor-availability/{doctor}', [DoctorAvailabilityController::class, 'show'])->name('doctors.availability.show');
     Route::resource('appointments', AppointmentController::class);
     Route::get('/appointments-list', fn () => redirect()->route('appointments.index'));
 });
@@ -40,6 +42,8 @@ Route::middleware(['auth', 'role:patient'])->group(function (): void {
 });
 
 Route::middleware(['auth', 'role:doctor,admin'])->group(function (): void {
+    Route::post('/doctor-availability/{doctor}', [DoctorAvailabilityController::class, 'store'])->name('doctors.availability.store');
+    Route::delete('/doctor-unavailability/{unavailability}', [DoctorAvailabilityController::class, 'destroy'])->name('doctors.availability.destroy');
     Route::resource('prescriptions', PrescriptionController::class);
     Route::get('/prescriptions/{prescription}/print', [PrescriptionController::class, 'print'])->name('prescriptions.print');
     Route::post('/appointments/{appointment}/confirm', [AppointmentController::class, 'confirmAppointment'])

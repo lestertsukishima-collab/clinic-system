@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Api\TokenController;
+use App\Http\Controllers\DoctorAvailabilityController;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,8 @@ Route::post('/v1/auth/token', [TokenController::class, 'store'])
     ->middleware('throttle:5,1');
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/doctors/{doctor}/availability', [DoctorAvailabilityController::class, 'show'])
+        ->middleware('role:patient,doctor,admin');
     Route::delete('/v1/auth/token', [TokenController::class, 'destroy']);
 
     Route::get('/doctors', [DoctorController::class, 'index'])
