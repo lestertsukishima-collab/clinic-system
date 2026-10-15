@@ -23,7 +23,7 @@ class SecurityHeaders
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
         $response->headers->remove('X-Powered-By');
 
-        if ($request->user() !== null) {
+        if ($request->user() !== null || $request->routeIs('login', 'register', 'logout')) {
             $response->headers->set('Cache-Control', 'no-store, private');
         }
 

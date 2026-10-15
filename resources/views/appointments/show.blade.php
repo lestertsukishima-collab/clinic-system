@@ -103,7 +103,7 @@
                             default => 'Check the appointment status above for updates.',
                         } }}</p>
                     </section>
-                    @if($appointment->status === 'completed')
+                    @if($appointment->status === 'completed' || $appointment->prescriptions->isNotEmpty())
                         <section class="clinic-detail-notes" aria-labelledby="patient-visit-prescriptions-title">
                             <h3 id="patient-visit-prescriptions-title" class="clinic-detail-label">Your prescriptions</h3>
                             @forelse($appointment->prescriptions as $prescription)

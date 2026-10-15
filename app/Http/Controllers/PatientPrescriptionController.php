@@ -50,8 +50,7 @@ class PatientPrescriptionController extends Controller
     {
         return Prescription::query()
             ->whereHas('appointment', fn (Builder $query) => $query
-                ->where('patient_id', $request->user()->id)
-                ->where('status', 'completed'))
+                ->where('patient_id', $request->user()->id))
             ->with(['appointment.patient', 'appointment.doctor.user', 'appointment.service']);
     }
 }

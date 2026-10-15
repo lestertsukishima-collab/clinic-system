@@ -15,7 +15,7 @@
                 <div>
                     <p class="clinic-eyebrow mb-2">YOUR HEALTH, YOUR WORKSPACE</p>
                     <h2>Welcome back, {{ auth()->user()->name }}</h2>
-                    <p>Request a visit, follow its status, and find your prescriptions after your consultation.</p>
+                    <p>Request a visit, follow its status, and find prescriptions recorded by your doctor.</p>
                 </div>
                 <div class="clinic-admin-date">
                     <span class="clinic-admin-date-icon" aria-hidden="true"><i class="bi bi-calendar3"></i></span>
@@ -45,7 +45,7 @@
                 </a>
                 <a href="{{ route('patient-prescriptions.index') }}" class="clinic-admin-stat-card clinic-admin-stat-link">
                     <div class="clinic-admin-stat-topline"><span class="clinic-admin-stat-icon clinic-stat-lilac" aria-hidden="true"><i class="bi bi-prescription2"></i></span><span class="clinic-admin-stat-period">MY RECORDS</span></div>
-                    <p>Prescriptions</p><strong>{{ $prescriptionCount }}</strong><small>from your completed visits</small>
+                    <p>Prescriptions</p><strong>{{ $prescriptionCount }}</strong><small>recorded by your doctor</small>
                 </a>
             </div>
 
@@ -69,7 +69,7 @@
                     <dl class="clinic-patient-help">
                         <div><dt>While your request is pending</dt><dd>You can edit the details or cancel it. A request becomes a confirmed appointment when the clinic approves it.</dd></div>
                         <div><dt>Once your appointment is confirmed</dt><dd>Contact the clinic if you need to change or cancel your visit.</dd></div>
-                        <div><dt>After your consultation</dt><dd>Your recorded prescriptions become available when the visit is marked completed.</dd></div>
+                        <div><dt>Your prescriptions</dt><dd>Your prescriptions become available as soon as your doctor records them.</dd></div>
                     </dl>
                 </aside>
             </div>

@@ -3,7 +3,9 @@
 test('registration screen can be rendered', function () {
     $response = $this->get('/register');
 
-    $response->assertStatus(200);
+    $response->assertSee(route('login'), false)
+        ->assertSee('Clinic home')
+        ->assertHeader('Cache-Control', 'no-store, private');
 });
 
 test('new users can register', function () {

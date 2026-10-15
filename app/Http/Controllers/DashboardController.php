@@ -41,8 +41,7 @@ class DashboardController extends Controller
                 ->latest('appointment_date')->orderByDesc('id')->paginate(10),
             'pendingCount' => (clone $appointments)->where('status', 'pending')->count(),
             'completedCount' => (clone $appointments)->where('status', 'completed')->count(),
-            'prescriptionCount' => $user->patientPrescriptions()
-                ->whereHas('appointment', fn (Builder $query) => $query->where('status', 'completed'))->count(),
+            'prescriptionCount' => $user->patientPrescriptions()->count(),
             'nextAppointment' => (clone $appointments)->with(['doctor.user', 'service'])
                 ->where('status', 'confirmed')->where('appointment_date', '>=', now())
                 ->orderBy('appointment_date')->orderBy('id')->first(),

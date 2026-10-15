@@ -27,7 +27,7 @@
                     <div>
                         <p class="clinic-eyebrow mb-1">TREATMENT RECORDS</p>
                         <h2 id="prescriptions-title">Prescription list</h2>
-                        <p class="clinic-card-description">{{ $isPatient ? 'Read and print prescriptions from your completed visits. Contact your doctor if you have questions about your prescription.' : 'Review prescriptions associated with clinic appointments.' }}</p>
+                        <p class="clinic-card-description">{{ $isPatient ? 'Read and print prescriptions as soon as your doctor records them. Contact your doctor if you have questions about your prescription.' : 'Review prescriptions associated with clinic appointments.' }}</p>
                     </div>
                     <span class="clinic-count-pill">
                         <i class="bi bi-prescription2" aria-hidden="true"></i>
@@ -55,7 +55,7 @@
                                         <div class="clinic-empty-state">
                                             <span class="clinic-empty-icon" aria-hidden="true"><i class="bi bi-prescription2"></i></span>
                                             <h3>No prescriptions recorded</h3>
-                                            <p>{{ $isPatient ? 'Prescriptions will appear here after your doctor completes the visit and records a prescription.' : 'Prescriptions linked to appointments will appear here.' }}</p>
+                                            <p>{{ $isPatient ? 'Prescriptions will appear here as soon as your doctor records them.' : 'Prescriptions linked to appointments will appear here.' }}</p>
                                             @unless($isPatient)
                                                 <a href="{{ route('prescriptions.create') }}" class="clinic-primary-button clinic-empty-action">
                                                     <i class="bi bi-plus-lg" aria-hidden="true"></i> Create a prescription

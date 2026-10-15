@@ -39,6 +39,37 @@ it('creates a prescription using the existing prescription schema', function () 
     ]);
 });
 
+it('makes saved prescriptions immediately visible to the patient assigned doctor and admin', function (string $role) {
+    $appointment = Appointment::factory()->create(['status' => 'confirmed']);
+    $admin = User::factory()->admin()->create();
+    $prescriber = $role === 'admin' ? $admin : $appointment->doctor->user;
+
+    $this->actingAs($prescriber)->post(route('prescriptions.store'), [
+        'appointment_id' => $appointment->id,
+        'diagnosis' => 'Newly recorded diagnosis',
+        'medicines' => 'Newly recorded medicine',
+    ])->assertRedirect();
+
+    $prescription = Prescription::query()->sole();
+    $this->assertDatabaseHas('prescriptions', [
+        'id' => $prescription->id,
+        'appointment_id' => $appointment->id,
+        'diagnosis' => 'Newly recorded diagnosis',
+    ]);
+    $this->assertDatabaseHas('appointments', ['id' => $appointment->id, 'status' => 'confirmed']);
+
+    $this->actingAs($appointment->patient)->get(route('dashboard'))->assertViewHas('prescriptionCount', 1);
+    $this->get(route('patient-prescriptions.index'))->assertSee($prescription->diagnosis);
+    $this->get(route('patient-prescriptions.show', $prescription))->assertSee($prescription->medicines);
+    $this->get(route('patient-prescriptions.print', $prescription))->assertSee($prescription->medicines);
+
+    foreach ([$appointment->doctor->user, $admin] as $viewer) {
+        $this->actingAs($viewer)->get(route('prescriptions.index'))->assertSee($prescription->diagnosis);
+        $this->get(route('prescriptions.show', $prescription))->assertSee($prescription->medicines);
+        $this->get(route('prescriptions.print', $prescription))->assertSee($prescription->medicines);
+    }
+})->with(['doctor', 'admin']);
+
 it('updates and deletes a prescription for the assigned doctor', function () {
     $doctor = Doctor::factory()->create();
     $appointment = Appointment::factory()->for($doctor, 'doctor')->create();

@@ -34,7 +34,7 @@ it('shows the patients own history and metrics with the nearest confirmed visit 
         ->assertViewHas('appointments', fn ($history) => $history->modelKeys() === [$appointments[5]->id, $appointments[4]->id, $appointments[3]->id, $appointments[2]->id, $appointments[1]->id, $appointments[0]->id])
         ->assertViewHas('pendingCount', 1)
         ->assertViewHas('completedCount', 1)
-        ->assertViewHas('prescriptionCount', 1)
+        ->assertViewHas('prescriptionCount', 2)
         ->assertViewHas('nextAppointment', fn ($next) => $next->is($appointments[4]))
         ->assertSee(route('appointments.edit', $appointments[3]), false)
         ->assertDontSee(route('appointments.edit', $appointments[4]), false)

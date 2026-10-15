@@ -7,7 +7,6 @@ use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// Public Routes (Kahit hindi naka-login)
 Route::get('/v1/services', function () {
     return response()->json([
         'status' => 'success',
@@ -18,7 +17,6 @@ Route::get('/v1/services', function () {
 Route::post('/v1/auth/token', [TokenController::class, 'store'])
     ->middleware('throttle:5,1');
 
-// Protected Routes require a valid Sanctum bearer token.
 Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/v1/auth/token', [TokenController::class, 'destroy']);
 

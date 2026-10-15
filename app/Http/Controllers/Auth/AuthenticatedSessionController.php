@@ -45,7 +45,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/')->with('toast', [
+        return redirect()->route('login')->with('toast', [
             'type' => 'success',
             'message' => 'You have been logged out.',
         ]);

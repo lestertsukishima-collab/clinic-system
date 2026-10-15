@@ -250,14 +250,15 @@ it('links patients to prescriptions from their completed visits', function () {
         ->assertDontSee('Write prescription');
 });
 
-it('does not show prescriptions to patients before the visit is completed', function () {
-    $appointment = Appointment::factory()->create(['status' => 'confirmed']);
+it('links patients to saved prescriptions before the visit is completed', function (string $status) {
+    $appointment = Appointment::factory()->create(['status' => $status]);
     $prescription = Prescription::factory()->for($appointment, 'appointment')->create();
 
     $this->actingAs($appointment->patient)->get(route('appointments.show', $appointment))
-        ->assertSee('Contact the clinic if you need to change or cancel this visit.')
-        ->assertDontSee(route('patient-prescriptions.show', $prescription), false);
-});
+        ->assertSee('Your prescriptions')
+        ->assertSee(route('patient-prescriptions.show', $prescription), false)
+        ->assertDontSee('Write prescription');
+})->with(['pending', 'confirmed', 'cancelled']);
 
 it('offers the doctor a confirmation action before the visit details for every pending request', function (string $scheduledDate, string $button) {
     $this->travelTo(now()->setDate(2026, 10, 9)->setTime(2, 0));

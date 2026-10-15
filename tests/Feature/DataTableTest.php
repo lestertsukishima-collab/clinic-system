@@ -96,20 +96,20 @@ it('sorts appointments by related patient names', function () {
     expect($response->json('data.0'))->toContain('Alpha Patient');
 });
 
-it('shows patients only their prescriptions from completed visits', function () {
+it('shows patients only their saved prescriptions across visit statuses', function (string $status) {
     $patient = User::factory()->patient()->create();
     $completed = Appointment::factory()->for($patient, 'patient')->create(['status' => 'completed']);
-    $pending = Appointment::factory()->for($patient, 'patient')->create(['status' => 'pending']);
+    $visit = Appointment::factory()->for($patient, 'patient')->create(['status' => $status]);
     Prescription::factory()->for($completed)->create(['diagnosis' => 'Visible treatment']);
-    Prescription::factory()->for($pending)->create(['diagnosis' => 'Unfinished treatment']);
+    Prescription::factory()->for($visit)->create(['diagnosis' => 'Recorded treatment']);
     Prescription::factory()->create(['diagnosis' => 'Another patient treatment']);
 
     $this->actingAs($patient)->getJson(route('patient-prescriptions.index', [
         'draw' => 1, 'start' => 0, 'length' => 10, 'table_search' => 'treatment',
         'order' => [['column' => 2, 'dir' => 'desc']],
-    ]))->assertJsonPath('recordsTotal', 1)->assertJsonCount(1, 'data')
-        ->assertSee('Visible treatment')->assertDontSee('Unfinished treatment')->assertDontSee('Another patient treatment');
-});
+    ]))->assertJsonPath('recordsTotal', 2)->assertJsonPath('recordsFiltered', 2)->assertJsonCount(2, 'data')
+        ->assertSee('Visible treatment')->assertSee('Recorded treatment')->assertDontSee('Another patient treatment');
+})->with(['pending', 'confirmed', 'cancelled', 'completed']);
 
 it('limits doctor prescription results to their assigned appointments', function () {
     $doctor = Doctor::factory()->create();

@@ -4,20 +4,21 @@ use App\Models\Appointment;
 use App\Models\Prescription;
 use App\Models\User;
 
-it('lists only the patients prescriptions from completed visits', function () {
+it('lists only the patients saved prescriptions regardless of visit status', function (string $status) {
     $patient = User::factory()->patient()->create();
     $completed = Appointment::factory()->for($patient, 'patient')->create(['status' => 'completed']);
     $prescription = Prescription::factory()->for($completed, 'appointment')->create();
-    $pending = Appointment::factory()->for($patient, 'patient')->create();
-    Prescription::factory()->for($pending, 'appointment')->create();
+    $visit = Appointment::factory()->for($patient, 'patient')->create(['status' => $status]);
+    $savedPrescription = Prescription::factory()->for($visit, 'appointment')->create();
     Prescription::factory()->for(Appointment::factory()->state(['status' => 'completed']), 'appointment')->create();
 
     $this->actingAs($patient)->get(route('patient-prescriptions.index'))
         ->assertSee('My prescriptions')
-        ->assertViewHas('prescriptions', fn ($records) => $records->modelKeys() === [$prescription->id])
+        ->assertViewHas('prescriptions', fn ($records) => $records->modelKeys() === [$savedPrescription->id, $prescription->id])
+        ->assertSee(route('patient-prescriptions.show', $savedPrescription), false)
         ->assertSee(route('patient-prescriptions.show', $prescription), false)
         ->assertDontSee(route('prescriptions.create'), false);
-});
+})->with(['pending', 'confirmed', 'cancelled', 'completed']);
 
 it('lets patients read and print their own completed visit prescription', function () {
     $appointment = Appointment::factory()->create(['status' => 'completed']);
@@ -36,18 +37,20 @@ it('lets patients read and print their own completed visit prescription', functi
         ->assertDontSee('XXXXX');
 });
 
-it('hides another patients prescription when accessed directly', function (string $action) {
+it('hides another patients prescription when accessed directly', function (string $status, string $action) {
     $patient = User::factory()->patient()->create();
-    $prescription = Prescription::factory()->for(Appointment::factory()->state(['status' => 'completed']), 'appointment')->create();
+    $prescription = Prescription::factory()->for(Appointment::factory()->state(['status' => $status]), 'appointment')->create();
 
     $this->actingAs($patient)->get(route('patient-prescriptions.'.$action, $prescription))->assertNotFound();
-})->with(['show', 'print']);
+})->with(['pending', 'confirmed', 'cancelled', 'completed'])->with(['show', 'print']);
 
-it('hides prescriptions until the patients visit is completed', function (string $status, string $action) {
+it('lets patients read and print saved prescriptions before the visit is completed', function (string $status, string $action) {
     $appointment = Appointment::factory()->create(['status' => $status]);
     $prescription = Prescription::factory()->for($appointment, 'appointment')->create();
 
-    $this->actingAs($appointment->patient)->get(route('patient-prescriptions.'.$action, $prescription))->assertNotFound();
+    $this->actingAs($appointment->patient)->get(route('patient-prescriptions.'.$action, $prescription))
+        ->assertSee($prescription->diagnosis)
+        ->assertSee($prescription->medicines);
 })->with(['pending', 'confirmed', 'cancelled'])->with(['show', 'print']);
 
 it('requires authentication for patient prescription pages', function (string $action) {
@@ -88,7 +91,7 @@ it('paginates prescription history', function () {
 it('shows a useful empty prescription list', function () {
     $this->actingAs(User::factory()->patient()->create())->get(route('patient-prescriptions.index'))
         ->assertSee('No prescriptions recorded')
-        ->assertSee('Prescriptions will appear here after your doctor completes the visit')
+        ->assertSee('Prescriptions will appear here as soon as your doctor records them.')
         ->assertDontSee('Create a prescription');
 });
 

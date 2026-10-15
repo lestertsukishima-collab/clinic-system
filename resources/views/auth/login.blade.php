@@ -51,4 +51,8 @@
             </x-primary-button>
         </div>
     </form>
+
+    <p class="clinic-auth-footer">
+        <a class="clinic-auth-home-link" href="{{ route('register') }}">{{ __('Create an account') }}</a>
+    </p>
 </x-guest-layout>

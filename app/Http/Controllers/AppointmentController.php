@@ -95,9 +95,7 @@ class AppointmentController extends Controller
         $user = $this->authenticatedUser($request);
         $appointment = $this->findAccessibleAppointment($user, $appointment->id);
 
-        if (in_array($user->role, ['admin', 'doctor'], true) || $appointment->status === 'completed') {
-            $appointment->load('prescriptions');
-        }
+        $appointment->load('prescriptions');
 
         return view('appointments.show', [
             'appointment' => $appointment,
